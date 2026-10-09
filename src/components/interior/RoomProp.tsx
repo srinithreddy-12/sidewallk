@@ -66,6 +66,10 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
 
     return (
       <g {...interactionProps}>
+        {interactive ? (
+          // Invisible padding so a narrow frame still clears the 44px touch target floor.
+          <polygon points={wallQuad(u0 - 0.35, u1 + 0.35, z0 - 0.15, z1 + 0.15, scale)} fill="transparent" />
+        ) : null}
         <polygon points={wallQuad(u0, u1, z0, z1, scale)} fill={frameColor} />
         <polygon
           points={wallQuad(u0 + 0.05, u1 - 0.05, z0 + 0.06, z1 - 0.08, scale)}

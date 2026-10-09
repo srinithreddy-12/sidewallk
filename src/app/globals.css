@@ -6,7 +6,7 @@
   --color-ink-soft: #52453a;
   --color-paper: #fbf6ee;
   --color-paper-dim: #f1e8d8;
-  --color-accent: #c97b5f;
+  --color-accent: #975c47;
   --color-accent-ink: #fbf6ee;
   --color-border: #d8cdbb;
   --color-focus: #2f6b5e;
@@ -85,6 +85,9 @@ select {
   border-radius: var(--radius-sm);
   z-index: 100;
   transition: top 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
 }
 
 .skip-link:focus {
@@ -134,7 +137,8 @@ select {
 }
 
 .button--small {
-  min-height: 36px;
+  /* Visually compact, but never below the 44px touch target floor. */
+  min-height: var(--touch-target);
   padding: var(--space-1) var(--space-3);
   font-size: 0.875rem;
 }

@@ -46,27 +46,48 @@ say so in the final summary rather than leaving it implied.
 
 ## Responsive and accessible
 
-- [ ] Works at phone width
-- [ ] List view fully usable without the map
-- [ ] Keyboard navigation throughout, with visible focus
+- [x] Works at phone width (verified in browser at 500×755 and 375×812 target
+      sizes: street, list, building, editor and content dialog all reflow to
+      a single comfortable column)
+- [x] List view fully usable without the map
+- [x] Keyboard navigation throughout, with visible focus (verified in
+      browser: Tab reaches the skip link, search, view toggle, map, and each
+      building in turn, each with a visible focus ring; Enter activates a
+      focused building)
 - [x] Dialogs trap focus, close on Escape, restore focus on close (verified in
       browser: Escape closes the content panel and focus returns to the prop
       that opened it)
-- [ ] `prefers-reduced-motion` respected
-- [ ] Contrast and touch targets checked
+- [x] `prefers-reduced-motion` respected (global CSS rule collapses all
+      animation/transition durations; the street pan/zoom and the page-entry
+      transition both use plain CSS transitions covered by that rule)
+- [x] Contrast and touch targets checked (verified programmatically in
+      browser, see Checks below) — found and fixed a real AA contrast
+      failure and a real touch-target failure, see Limitations
 
 ## Demo honesty
 
-- [ ] Sample members and sample content clearly labelled
-- [ ] No invented visitor counts, testimonials or activity
-- [ ] Outbound demo links all use the `.example` TLD
-- [ ] Roles described as future product roles, not real authorization
+- [x] Sample members and sample content clearly labelled ("Sample member" /
+      "Sample artwork for this demo" / "Sample catalogue item" badges
+      throughout)
+- [x] No invented visitor counts, testimonials or activity
+- [x] Outbound demo links all use the `.example` TLD
+- [x] Roles described as future product roles, not real authorization (editor
+      is explicitly labelled a local-only demo with no real authorization)
 
 ## Robustness
 
-- [ ] Missing or partial content renders without crashing
-- [ ] Corrupt or wrong-version local save falls back to demo data
-- [ ] Only `http:`, `https:` and `mailto:` links are rendered
+- [x] Missing or partial content renders without crashing (verified in
+      browser: a newly added display prop with empty content renders inert,
+      no crash; also covered by the "degrades gracefully" unit tests in
+      `storage.test.ts`)
+- [x] Corrupt or wrong-version local save falls back to demo data (verified
+      in browser: set `localStorage['sidewallk.town.v1']` to invalid JSON,
+      reloaded, app rendered demo data with no console errors; also unit
+      tested in `storage.test.ts`)
+- [x] Only `http:`, `https:` and `mailto:` links are rendered (verified in
+      browser: entered a `javascript:` URL into the editor's action link
+      field — the action button disappeared rather than rendering the unsafe
+      href; also unit tested in `links.test.ts`)
 
 ## Checks
 
@@ -77,24 +98,26 @@ say so in the final summary rather than leaving it implied.
 - [x] Production build passes (`next build`)
 - [x] Full visitor flow driven in a real browser at desktop width (street →
       search/list → building → content panel → action link → editor)
-- [ ] Full visitor flow driven in a real browser at phone width
+- [x] Full visitor flow driven in a real browser at phone width
 - [x] Editor driven in a real browser (member fields, props add/move/remove,
       content fields, reset, persistence across reload)
 
 ## Limitations
 
-- Phone-width verification has not been run yet.
 - Building silhouettes share one box shape; the four exterior kinds differ by
   facade (window/door/awning arrangement) and colour, not roofline.
 - A newly added display prop starts with empty content and is not clickable
   in the room until the editor's title/description fields are filled in —
   confirmed this degrades gracefully (renders, just inert) rather than
   crashing.
-- Contrast/touch-target review against the actual token values (not just
-  visual inspection) has not been done yet.
-- No automated check yet that a corrupt/wrong-version `localStorage` value
-  falls back to demo data at the UI level (the parsing logic itself is unit
-  tested in `storage.test.ts`).
+- The phone-width check used the narrowest viewport the available browser
+  tooling could reach (~500px, then confirmed down to 375px via a fresh tab)
+  rather than a real device; layout uses relative units and `flex-wrap`
+  throughout so it should hold below that, but it was not pixel-checked on
+  an actual phone.
+- Contrast/touch-target review was a targeted programmatic check (WCAG
+  contrast math and `getBoundingClientRect` over every interactive element)
+  rather than a full manual accessibility audit with assistive tech.
 
 ## Future phases
 

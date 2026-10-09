@@ -110,7 +110,7 @@ export function Street({ members, highlightedId, onEnter }: StreetProps) {
         <div className={styles.controlsRow}>
           <button
             type="button"
-            className="button button--small"
+            className="button"
             onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 0.15))}
             aria-label="Zoom out"
           >
@@ -118,7 +118,7 @@ export function Street({ members, highlightedId, onEnter }: StreetProps) {
           </button>
           <button
             type="button"
-            className="button button--small"
+            className="button"
             onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 0.15))}
             aria-label="Zoom in"
           >
@@ -127,7 +127,7 @@ export function Street({ members, highlightedId, onEnter }: StreetProps) {
         </div>
         <button
           type="button"
-          className="button button--small"
+          className="button"
           onClick={() => {
             setZoom(1);
             setPan({ x: VIEW_WIDTH * 0.1, y: VIEW_HEIGHT * 0.55 });
