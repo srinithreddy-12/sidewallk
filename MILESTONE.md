@@ -1,18 +1,21 @@
 # Milestone 1 — visitor walks the street and steps inside
 
-Nothing is built yet. Tick an item only when it has actually been run, not when
-the code looks right. Add a line under **Limitations** for anything that is
-partly done, and say so in the final summary rather than leaving it implied.
+Tick an item only when it has actually been run, not when the code looks
+right. Add a line under **Limitations** for anything that is partly done, and
+say so in the final summary rather than leaving it implied.
 
 ## Town
 
-- [ ] Eight demo buildings on the street
-- [ ] At least four distinct exterior designs
-- [ ] Smooth pan and zoom with obvious controls
-- [ ] Buildings are clickable and their names are readable
-- [ ] Search by member name and category
-- [ ] Accessible list view showing the same members
-- [ ] Direct link to an individual building
+- [x] Eight demo buildings on the street
+- [x] At least four distinct exterior designs (gallery-front, studio-front,
+      shop-front, cafe-front, each with distinct window/door/awning facades)
+- [x] Smooth pan and zoom with obvious controls (keyboard arrows + on-screen
+      zoom buttons, verified in browser)
+- [x] Buildings are clickable and their names are readable
+- [x] Search by member name and category
+- [x] Accessible list view showing the same members
+- [x] Direct link to an individual building (`/b/[memberId]` route; interior
+      content itself is still a placeholder — see Limitations)
 
 ## Interiors
 
@@ -71,7 +74,12 @@ partly done, and say so in the final summary rather than leaving it implied.
 
 ## Limitations
 
-_Record anything incomplete, unverified or deliberately deferred._
+- Interiors, the demo editor, and the full accessibility/responsive pass are
+  not built yet — `/b/[memberId]` currently shows a minimal placeholder
+  (name, tagline, description) rather than the room.
+- Phone-width verification has not been run yet.
+- Building silhouettes share one box shape; the four exterior kinds differ by
+  facade (window/door/awning arrangement) and colour, not roofline.
 
 ## Future phases
 

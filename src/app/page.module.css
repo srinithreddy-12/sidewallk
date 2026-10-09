@@ -1,0 +1,23 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-8);
+}
+
+.header {
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  font-size: 2rem;
+}
+
+.subtitle {
+  color: var(--color-ink-soft);
+  margin-top: var(--space-2);
+  max-width: 640px;
+}
+
+.demoNotice {
+  margin-top: var(--space-3);
+}
