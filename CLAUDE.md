@@ -3,10 +3,12 @@
 `SPEC.md` is the scope. `AGENTS.md` is the working agreement and the rules you
 must not break. This file is the technical shape of the project.
 
-The repository is currently **docs only**. Everything below is the target
-architecture, not a description of existing code. Scaffold it, then keep this
-file accurate as the code grows — if you deviate, update this file in the same
-commit and say why.
+Milestone 1 is built on the `claude` branch, matching the architecture below.
+Keep this file accurate as the code grows — if you deviate, update this file
+in the same commit and say why. `prop-registry.ts`, `search.ts` and
+`room-edit.ts` were added to `lib/` beyond the original suggested layout;
+they follow the same "plain function over hook" rule and are documented
+inline.
 
 ## Stack
 

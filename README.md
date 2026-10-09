@@ -7,10 +7,29 @@ step inside without signing in.
 The point of difference is the interiors: detailed rooms that hold real,
 clickable content rather than a profile card.
 
-> **Status: specification only.** This repository currently contains the brief
-> and the agent guidance. The application has not been built yet. Whichever
-> agent scaffolds it should replace this section with real install and run
-> instructions.
+> **Status: first milestone built.** A visitor can open the street, find a
+> member, enter their interior, explore its content and follow a sample
+> action — and a local editor can change a room and persist those changes.
+> See `MILESTONE.md` for the full checklist and known limitations.
+
+## Getting started
+
+```bash
+npm install
+npm run dev
+```
+
+Then open **http://localhost:3000**.
+
+Other scripts:
+
+```bash
+npm run build       # production build
+npm start            # run the production build
+npm run lint          # eslint
+npm run typecheck     # tsc --noEmit
+npm test               # vitest
+```
 
 ## Repository layout
 
@@ -30,34 +49,32 @@ Each worktree installs its own `node_modules`.
 | File | What it is |
 | --- | --- |
 | `SPEC.md` | The build brief. Source of truth for scope. |
-| `CLAUDE.md` | Target architecture and development conventions. |
+| `CLAUDE.md` | Architecture and development conventions. |
 | `AGENTS.md` | Working agreement every coding agent must follow. |
 | `MILESTONE.md` | Checklist of completed work and known limitations. |
 
-## Getting started
+## What's here
 
-Once the project has been scaffolded, this section should read something like:
-
-```bash
-npm install
-npm run dev
-```
-
-and give the exact local URL.
-
-## Milestone
-
-One complete experience: a visitor opens a populated miniature street,
-discovers a member, enters their interior, explores their content and follows a
-useful action — plus a local editor for changing a room and having those
-changes persist.
+- **The street** (`/`) — eight sample members across four distinct exterior
+  styles, with pan/zoom, search by name or category, and an accessible list
+  view that works without touching the map.
+- **Interiors** (`/b/[memberId]`) — gallery, studio and shop room templates
+  with clickable furniture and decor; clicking a display object opens a
+  detail panel with its content and, where safe, a link.
+- **A local demo editor** — from any interior, "Edit this room" opens
+  controls to rename the member, change category/description/action link,
+  switch template, recolor the room, and add/move/remove/annotate furniture.
+  Every change previews immediately and is saved to `localStorage` under
+  `sidewallk.town.v1`; "Reset to demo data" discards it.
 
 Everything runs from typed local data. No accounts, no paid services, no API
-keys.
+keys, no network calls at runtime.
 
 ## A note on the demo content
 
-Every member, room and link in this project is invented sample content.
-Outbound links use the reserved `.example` TLD so nothing can be mistaken for a
-real business. The project deliberately contains no visitor counts,
-testimonials or activity feeds.
+Every member, room and link in this project is invented sample content,
+clearly labelled as such throughout the UI. Outbound links use the reserved
+`.example` TLD so nothing can be mistaken for a real business. The project
+deliberately contains no visitor counts, testimonials or activity feeds, and
+the editor is explicitly labelled a local-only demo with no real
+authorization.
