@@ -19,13 +19,14 @@ say so in the final summary rather than leaving it implied.
 
 ## Interiors
 
-- [ ] Gallery template — framed work with title, description, project link
-- [ ] Studio template — services, portfolio items, booking or contact action
-- [ ] Shop template — product displays linking to external product pages
-- [ ] Each room is a coherent arrangement, not scattered props
-- [ ] Clicking a content object opens a readable detail panel
-- [ ] Clear navigation back to the street
-- [ ] Polished transition between street and interior
+- [x] Gallery template — framed work with title, description, project link
+- [x] Studio template — services, portfolio items, booking or contact action
+- [x] Shop template — product displays linking to external product pages
+- [x] Each room is a coherent arrangement, not scattered props
+- [x] Clicking a content object opens a readable detail panel
+- [x] Clear navigation back to the street
+- [x] Polished transition between street and interior (fade/rise on mount,
+      skipped under `prefers-reduced-motion`)
 
 ## Demo editor
 
@@ -45,7 +46,9 @@ say so in the final summary rather than leaving it implied.
 - [ ] Works at phone width
 - [ ] List view fully usable without the map
 - [ ] Keyboard navigation throughout, with visible focus
-- [ ] Dialogs trap focus, close on Escape, restore focus on close
+- [x] Dialogs trap focus, close on Escape, restore focus on close (verified in
+      browser: Escape closes the content panel and focus returns to the prop
+      that opened it)
 - [ ] `prefers-reduced-motion` respected
 - [ ] Contrast and touch targets checked
 
@@ -74,12 +77,15 @@ say so in the final summary rather than leaving it implied.
 
 ## Limitations
 
-- Interiors, the demo editor, and the full accessibility/responsive pass are
-  not built yet — `/b/[memberId]` currently shows a minimal placeholder
-  (name, tagline, description) rather than the room.
+- The demo editor is not built yet — rooms render the fixed demo arrangement
+  and cannot be changed.
 - Phone-width verification has not been run yet.
 - Building silhouettes share one box shape; the four exterior kinds differ by
   facade (window/door/awning arrangement) and colour, not roofline.
+- Decor props (plant, lamp, bench, rug) are not clickable by design — only
+  display props with content open the detail panel. Not yet verified with a
+  display prop that has no content attached (can't happen yet since demo data
+  always attaches content; will matter once the editor can add props).
 
 ## Future phases
 
