@@ -30,16 +30,19 @@ say so in the final summary rather than leaving it implied.
 
 ## Demo editor
 
-- [ ] Edit member name, description, category and action link
-- [ ] Select an interior template
-- [ ] Change supported room colours
-- [ ] Add, move and remove furniture and decor
-- [ ] Attach content to display objects
-- [ ] Every control usable without dragging
-- [ ] Changes preview immediately
-- [ ] Changes survive a refresh
-- [ ] Reset returns to the original demo data
-- [ ] Editor is visibly labelled a local demo
+- [x] Edit member name, description, category and action link
+- [x] Select an interior template
+- [x] Change supported room colours
+- [x] Add, move and remove furniture and decor
+- [x] Attach content to display objects
+- [x] Every control usable without dragging (buttons and native inputs only)
+- [x] Changes preview immediately (verified in browser: typing a new name
+      updates the page heading live)
+- [x] Changes survive a refresh (verified in browser: renamed member and a
+      moved prop both survived a full page reload)
+- [x] Reset returns to the original demo data (verified in browser)
+- [x] Editor is visibly labelled a local demo ("Local demo editor" badge plus
+      an explicit "changes save to this browser only" note)
 
 ## Responsive and accessible
 
@@ -67,25 +70,31 @@ say so in the final summary rather than leaving it implied.
 
 ## Checks
 
-- [ ] Unit tests for state and persistence behaviour
-- [ ] Type checking passes
-- [ ] Lint passes
-- [ ] Production build passes
-- [ ] Full visitor flow driven in a real browser at desktop width
+- [x] Unit tests for state and persistence behaviour (33 tests: links,
+      search, storage/overrides, room-edit)
+- [x] Type checking passes (`tsc --noEmit`)
+- [x] Lint passes (`eslint .`, zero warnings)
+- [x] Production build passes (`next build`)
+- [x] Full visitor flow driven in a real browser at desktop width (street →
+      search/list → building → content panel → action link → editor)
 - [ ] Full visitor flow driven in a real browser at phone width
-- [ ] Editor driven in a real browser
+- [x] Editor driven in a real browser (member fields, props add/move/remove,
+      content fields, reset, persistence across reload)
 
 ## Limitations
 
-- The demo editor is not built yet — rooms render the fixed demo arrangement
-  and cannot be changed.
 - Phone-width verification has not been run yet.
 - Building silhouettes share one box shape; the four exterior kinds differ by
   facade (window/door/awning arrangement) and colour, not roofline.
-- Decor props (plant, lamp, bench, rug) are not clickable by design — only
-  display props with content open the detail panel. Not yet verified with a
-  display prop that has no content attached (can't happen yet since demo data
-  always attaches content; will matter once the editor can add props).
+- A newly added display prop starts with empty content and is not clickable
+  in the room until the editor's title/description fields are filled in —
+  confirmed this degrades gracefully (renders, just inert) rather than
+  crashing.
+- Contrast/touch-target review against the actual token values (not just
+  visual inspection) has not been done yet.
+- No automated check yet that a corrupt/wrong-version `localStorage` value
+  falls back to demo data at the UI level (the parsing logic itself is unit
+  tested in `storage.test.ts`).
 
 ## Future phases
 

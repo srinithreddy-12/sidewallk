@@ -80,3 +80,28 @@ export const TEMPLATE_PROP_PALETTE: Record<string, RoomPropKind[]> = {
   studio: ["shelf-display", "booking-desk", "framed-work", "plant", "rug", "lamp"],
   shop: ["product-table", "shelf-display", "plant", "rug", "lamp", "bench"],
 };
+
+/** A reasonable starting colour for a newly added prop of each kind. */
+export const DEFAULT_PROP_TONE: Record<RoomPropKind, string> = {
+  "framed-work": "#2d2a26",
+  pedestal: "#b7a888",
+  "shelf-display": "#a9754f",
+  "product-table": "#b58a55",
+  "booking-desk": "#6b5440",
+  plant: "#4d6b4a",
+  rug: "#9c7b52",
+  lamp: "#caa968",
+  bench: "#6b5440",
+};
+
+/** Warm, legible wall/floor tones a member can pick for their room. */
+export const ROOM_PALETTE_OPTIONS = [
+  "#d8cdbb",
+  "#e4dac8",
+  "#ded0b8",
+  "#e8dcc6",
+  "#d9cab0",
+  "#ece0c9",
+  "#d7c9d6",
+  "#c9d6d2",
+] as const;

@@ -1,15 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMember } from "@/lib/store";
 import { isSafeUrl } from "@/lib/links";
 import { RoomScene } from "@/components/interior/RoomScene";
+import { EditorPanel } from "@/components/editor/EditorPanel";
 import styles from "./page.module.css";
 
 export default function BuildingPage() {
   const { memberId } = useParams<{ memberId: string }>();
   const member = useMember(memberId);
+  const [isEditing, setIsEditing] = useState(false);
 
   if (!member) {
     return (
@@ -32,8 +35,13 @@ export default function BuildingPage() {
       <div className={styles.header}>
         <h1>{member.name}</h1>
         <span className="sample-badge">Sample member</span>
+        <button type="button" className="button button--small" onClick={() => setIsEditing((v) => !v)}>
+          {isEditing ? "Close editor" : "Edit this room"}
+        </button>
       </div>
       <p className={styles.tagline}>{member.tagline}</p>
+
+      {isEditing ? <EditorPanel member={member} onClose={() => setIsEditing(false)} /> : null}
 
       <div className={styles.scene}>
         <RoomScene room={member.room} />

@@ -168,6 +168,11 @@ select {
   resize: vertical;
 }
 
+.field__hint {
+  color: var(--color-ink-soft);
+  font-size: 0.78rem;
+}
+
 .sample-badge {
   display: inline-flex;
   align-items: center;
