@@ -195,6 +195,14 @@ export function mergeOverride(
   };
 }
 
+/** Drops one member's override, e.g. for "Reset to demo data". Returns the same map reference when there was nothing to remove. */
+export function removeOverride(overrides: OverrideMap, memberId: string): OverrideMap {
+  if (!(memberId in overrides)) return overrides;
+  const next = { ...overrides };
+  delete next[memberId];
+  return next;
+}
+
 /** Applies a member's override on top of demo data. Pure, so it is testable without a DOM. */
 export function applyOverride(member: Member, override: MemberOverride | undefined): Member {
   if (!override) return member;

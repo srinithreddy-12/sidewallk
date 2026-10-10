@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEMO_TOWN } from "./demo-data";
 import {
   applyOverride,
+  loadOverrides,
   mergeOverride,
   parseStoredOverrides,
+  removeOverride,
+  saveOverrides,
   serializeOverrides,
   STORAGE_KEY,
 } from "./storage";
@@ -98,6 +101,21 @@ describe("mergeOverride", () => {
     const patch: MemberOverride = { room: { props: [propB] } };
     expect(mergeOverride(existing, patch).room?.props).toEqual([propB]);
   });
+
+  it("changes the room template without clobbering an existing palette or props", () => {
+    const propA: RoomProp = { id: "a", kind: "plant", x: 0, y: 0, tone: "#000000" };
+    const existing: MemberOverride = { room: { template: "gallery", palette: "#d8cdbb", props: [propA] } };
+    const patch: MemberOverride = { room: { template: "shop" } };
+    const merged = mergeOverride(existing, patch);
+    expect(merged.room).toEqual({ template: "shop", palette: "#d8cdbb", props: [propA] });
+  });
+
+  it("sets a room template for the first time onto an override with no prior room field", () => {
+    const existing: MemberOverride = { name: "Renamed" };
+    const patch: MemberOverride = { room: { template: "studio" } };
+    const merged = mergeOverride(existing, patch);
+    expect(merged.room).toEqual({ template: "studio", palette: undefined, props: undefined });
+  });
 });
 
 describe("applyOverride", () => {
@@ -116,6 +134,95 @@ describe("applyOverride", () => {
   it("falls back to demo props when the override never touched the room", () => {
     const result = applyOverride(demoMember, { name: "Renamed" });
     expect(result.room.props).toBe(demoMember.room.props);
+  });
+
+  it("applies an overridden room template", () => {
+    const otherTemplate = demoMember.room.template === "gallery" ? "shop" : "gallery";
+    const result = applyOverride(demoMember, { room: { template: otherTemplate } });
+    expect(result.room.template).toBe(otherTemplate);
+  });
+
+  it("falls back to the demo template when the override never touched it", () => {
+    const result = applyOverride(demoMember, { room: { palette: "#e4dac8" } });
+    expect(result.room.template).toBe(demoMember.room.template);
+  });
+});
+
+describe("removeOverride", () => {
+  it("drops the named member's override and leaves others untouched", () => {
+    const overrides: OverrideMap = {
+      [demoMember.id]: { name: "Renamed" },
+      "other-member": { name: "Also renamed" },
+    };
+    const result = removeOverride(overrides, demoMember.id);
+    expect(result).toEqual({ "other-member": { name: "Also renamed" } });
+  });
+
+  it("round-trips through applyOverride back to the original demo member", () => {
+    const overrides: OverrideMap = { [demoMember.id]: { name: "Renamed", room: { template: "shop" } } };
+    const afterReset = removeOverride(overrides, demoMember.id);
+    const result = applyOverride(demoMember, afterReset[demoMember.id]);
+    expect(result).toBe(demoMember);
+  });
+
+  it("returns the same map reference when there is nothing to remove", () => {
+    const overrides: OverrideMap = { "other-member": { name: "X" } };
+    expect(removeOverride(overrides, demoMember.id)).toBe(overrides);
+  });
+});
+
+describe("loadOverrides / saveOverrides", () => {
+  function mockLocalStorage() {
+    const store = new Map<string, string>();
+    return {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+    };
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("round-trips a save through to a fresh load, exercising real localStorage calls", () => {
+    vi.stubGlobal("window", { localStorage: mockLocalStorage() });
+    const overrides: OverrideMap = { [demoMember.id]: { name: "Persisted Name" } };
+
+    expect(saveOverrides(overrides)).toEqual({ ok: true });
+    expect(loadOverrides()).toEqual(overrides);
+  });
+
+  it("reset (save of the empty map) is visible on the next load", () => {
+    vi.stubGlobal("window", { localStorage: mockLocalStorage() });
+    saveOverrides({ [demoMember.id]: { name: "Will be reset" } });
+
+    saveOverrides({});
+
+    expect(loadOverrides()).toEqual({});
+  });
+
+  it("loadOverrides returns the empty map, never throws, when storage is unavailable", () => {
+    vi.stubGlobal("window", {
+      get localStorage(): never {
+        throw new Error("storage blocked");
+      },
+    });
+    expect(loadOverrides()).toEqual({});
+  });
+
+  it("saveOverrides reports failure, never throws, when storage is unavailable", () => {
+    vi.stubGlobal("window", {
+      get localStorage(): never {
+        throw new Error("storage blocked");
+      },
+    });
+    const status = saveOverrides({ [demoMember.id]: { name: "X" } });
+    expect(status.ok).toBe(false);
   });
 });
 

@@ -9,8 +9,15 @@ say so in the final summary rather than leaving it implied.
 - [x] Eight demo buildings on the street
 - [x] At least four distinct exterior designs (gallery-front, studio-front,
       shop-front, cafe-front, each with distinct window/door/awning facades)
-- [x] Smooth pan and zoom with obvious controls (keyboard arrows + on-screen
-      zoom buttons, verified in browser)
+- [x] Smooth pan and zoom with obvious controls (keyboard arrows, on-screen
+      zoom buttons, an on-screen directional pad, and drag-to-pan via Pointer
+      Events — mouse and touch both verified in browser)
+- [x] A search that narrows the map to one or two results now re-centers and
+      zooms the street to bring them into view, instead of leaving them
+      wherever the street happened to be panned (verified in browser:
+      searching "Needle" brought the previously off-screen building into
+      view with its highlight visible; clearing the search snaps back to the
+      full default view)
 - [x] Buildings are clickable and their names are readable
 - [x] Search by member name and category
 - [x] Accessible list view showing the same members
@@ -91,8 +98,11 @@ say so in the final summary rather than leaving it implied.
 
 ## Checks
 
-- [x] Unit tests for state and persistence behaviour (33 tests: links,
-      search, storage/overrides, room-edit)
+- [x] Unit tests for state and persistence behaviour (44 tests: links, search,
+      storage/overrides, room-edit — including dedicated regression coverage
+      for persistence round-trips through real `loadOverrides`/
+      `saveOverrides` calls, `removeOverride`/reset semantics, and room
+      template selection via `mergeOverride`/`applyOverride`)
 - [x] Type checking passes (`tsc --noEmit`)
 - [x] Lint passes (`eslint .`, zero warnings)
 - [x] Production build passes (`next build`)
@@ -118,6 +128,15 @@ say so in the final summary rather than leaving it implied.
 - Contrast/touch-target review was a targeted programmatic check (WCAG
   contrast math and `getBoundingClientRect` over every interactive element)
   rather than a full manual accessibility audit with assistive tech.
+
+## Infrastructure
+
+- `next dev` and `next build` now write to separate output directories
+  (`.next-dev/` vs `.next/`, chosen via `NODE_ENV` in `next.config.ts`) so
+  running a build no longer corrupts a live dev server's cache — confirmed
+  by running `next build` while the dev server stayed up on port 3000 and
+  verifying it was still fully interactive (not just returning HTTP 200)
+  immediately after.
 
 ## Future phases
 

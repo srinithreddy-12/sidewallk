@@ -18,6 +18,38 @@
   transition: transform 0.25s ease;
 }
 
+.scene.dragging {
+  transition: none;
+}
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, var(--touch-target));
+  grid-template-rows: repeat(2, var(--touch-target));
+  gap: var(--space-1);
+  justify-content: center;
+}
+
+.padUp {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.padLeft {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.padDown {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.padRight {
+  grid-column: 3;
+  grid-row: 2;
+}
+
 .controls {
   position: absolute;
   right: var(--space-3);

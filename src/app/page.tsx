@@ -36,7 +36,7 @@ export default function HomePage() {
       <TownToolbar query={query} onQueryChange={setQuery} view={view} onViewChange={setView} />
 
       {view === "map" ? (
-        <Street members={filtered} highlightedId={highlightedId} onEnter={enterBuilding} />
+        <Street members={filtered} totalCount={town.members.length} highlightedId={highlightedId} onEnter={enterBuilding} />
       ) : (
         <ListView members={filtered} onEnter={enterBuilding} />
       )}

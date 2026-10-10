@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { DEMO_TOWN } from "./demo-data";
-import { applyOverride, loadOverrides, mergeOverride, saveOverrides, type StorageStatus } from "./storage";
+import { applyOverride, loadOverrides, mergeOverride, removeOverride, saveOverrides, type StorageStatus } from "./storage";
 import type { Member, MemberOverride, OverrideMap, Town } from "./types";
 
 interface TownContextValue {
@@ -41,9 +41,8 @@ export function TownProvider({ children }: { children: ReactNode }) {
 
   const resetMember = useCallback((memberId: string) => {
     setOverrides((current) => {
-      if (!(memberId in current)) return current;
-      const next = { ...current };
-      delete next[memberId];
+      const next = removeOverride(current, memberId);
+      if (next === current) return current;
       setSaveStatus(saveOverrides(next));
       return next;
     });
