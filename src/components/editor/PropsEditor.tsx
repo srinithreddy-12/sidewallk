@@ -18,6 +18,11 @@ interface PropsEditorProps {
 export function PropsEditor({ room, onMoveProp, onRemoveProp, onUpdatePropContent, onAddProp }: PropsEditorProps) {
   const palette = TEMPLATE_PROP_PALETTE[room.template] ?? [];
   const [selectedKind, setSelectedKind] = useState<RoomPropKind>(palette[0] ?? "plant");
+  // Switching templates changes `palette`; `selectedKind` can still hold a kind from the
+  // old one. Clamp at render time (not via an effect) so there's no gap where a stale
+  // kind could reach Add — this is correct even if Add is clicked immediately after
+  // switching templates, before any effect would have had a chance to run.
+  const effectiveKind: RoomPropKind = palette.includes(selectedKind) ? selectedKind : (palette[0] ?? "plant");
 
   return (
     <div>
@@ -35,7 +40,7 @@ export function PropsEditor({ room, onMoveProp, onRemoveProp, onUpdatePropConten
       </div>
       <div className={styles.addRow}>
         <Field label="Add furniture or decor" htmlFor="add-prop-kind">
-          <select id="add-prop-kind" value={selectedKind} onChange={(e) => setSelectedKind(e.target.value as RoomPropKind)}>
+          <select id="add-prop-kind" value={effectiveKind} onChange={(e) => setSelectedKind(e.target.value as RoomPropKind)}>
             {palette.map((kind) => (
               <option key={kind} value={kind}>
                 {PROP_REGISTRY[kind].label}
@@ -43,7 +48,7 @@ export function PropsEditor({ room, onMoveProp, onRemoveProp, onUpdatePropConten
             ))}
           </select>
         </Field>
-        <button type="button" className="button" onClick={() => onAddProp(selectedKind)}>
+        <button type="button" className="button" onClick={() => onAddProp(effectiveKind)}>
           Add
         </button>
       </div>

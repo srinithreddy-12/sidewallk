@@ -23,22 +23,42 @@ const CATEGORIES: MemberCategory[] = ["art", "craft", "design", "food", "music",
 const TEMPLATES: InteriorTemplate[] = ["gallery", "studio", "shop"];
 const PROP_KINDS = Object.keys(PROP_REGISTRY) as RoomPropKind[];
 
+/** For structural identifiers that are never user-clearable — must actually have content. */
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+/**
+ * For free text a user can legitimately clear in the editor (name, tagline,
+ * description, link label, prop title/description). Only the type is
+ * checked — an empty string is a valid, intentional value and must survive
+ * a save/load round trip, not be treated as "missing" and fall back to demo
+ * data.
+ */
+function isString(value: unknown): value is string {
+  return typeof value === "string";
 }
 
 function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(value);
 }
 
-/** Re-validates a link's protocol every time, so a save from before the allowlist tightened can't slip through. */
+/**
+ * Re-validates a link's protocol every time, so a save from before the
+ * allowlist tightened can't slip through. `id` is an internal identifier
+ * (never blanked by a user) and must be non-empty; `label` and `url` are
+ * user-editable and an intentionally empty `url` is allowed through as-is —
+ * it just won't render as a link (see `isSafeUrl` call sites). A *non*-empty
+ * url still must pass the allowlist, so a javascript:/data: URL is still
+ * rejected here, independent of the render-time check.
+ */
 function validateLink(value: unknown): MemberLink | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const candidate = value as Record<string, unknown>;
-  if (!isNonEmptyString(candidate.id) || !isNonEmptyString(candidate.label) || !isNonEmptyString(candidate.url)) {
+  if (!isNonEmptyString(candidate.id) || !isString(candidate.label) || !isString(candidate.url)) {
     return undefined;
   }
-  if (!isSafeUrl(candidate.url)) return undefined;
+  if (candidate.url !== "" && !isSafeUrl(candidate.url)) return undefined;
   return { id: candidate.id, label: candidate.label, url: candidate.url };
 }
 
@@ -61,7 +81,7 @@ function validateProp(value: unknown): RoomProp | undefined {
   if (candidate.content !== undefined) {
     if (typeof candidate.content !== "object" || candidate.content === null) return prop;
     const contentCandidate = candidate.content as Record<string, unknown>;
-    if (!isNonEmptyString(contentCandidate.title) || !isNonEmptyString(contentCandidate.description)) {
+    if (!isString(contentCandidate.title) || !isString(contentCandidate.description)) {
       return prop;
     }
     const link = contentCandidate.link !== undefined ? validateLink(contentCandidate.link) : undefined;
@@ -78,16 +98,16 @@ function validateOverride(value: unknown): MemberOverride | undefined {
   const candidate = value as Record<string, unknown>;
   const result: MemberOverride = {};
 
-  if (candidate.name !== undefined && isNonEmptyString(candidate.name)) {
+  if (candidate.name !== undefined && isString(candidate.name)) {
     result.name = candidate.name;
   }
   if (candidate.category !== undefined && CATEGORIES.includes(candidate.category as MemberCategory)) {
     result.category = candidate.category as MemberCategory;
   }
-  if (candidate.tagline !== undefined && isNonEmptyString(candidate.tagline)) {
+  if (candidate.tagline !== undefined && isString(candidate.tagline)) {
     result.tagline = candidate.tagline;
   }
-  if (candidate.description !== undefined && isNonEmptyString(candidate.description)) {
+  if (candidate.description !== undefined && isString(candidate.description)) {
     result.description = candidate.description;
   }
   if (candidate.action !== undefined) {

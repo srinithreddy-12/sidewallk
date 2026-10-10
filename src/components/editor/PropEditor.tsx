@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Field } from "@/components/ui/Field";
 import { PROP_REGISTRY } from "@/lib/prop-registry";
 import type { RoomProp } from "@/lib/types";
@@ -13,12 +12,19 @@ interface PropEditorProps {
   onUpdateContent: (fields: { title: string; description: string; linkLabel: string; linkUrl: string }) => void;
 }
 
+/**
+ * Fully controlled from `prop.content` — no local draft state. A local draft
+ * here previously went stale after "Reset to demo data": React keeps this
+ * component mounted across a reset (same prop id, same key), so a draft
+ * seeded only at mount never saw the reset's new content and could be
+ * re-saved over it on the next keystroke.
+ */
 export function PropEditor({ prop, onMove, onRemove, onUpdateContent }: PropEditorProps) {
   const definition = PROP_REGISTRY[prop.kind];
-  const [title, setTitle] = useState(prop.content?.title ?? "");
-  const [description, setDescription] = useState(prop.content?.description ?? "");
-  const [linkLabel, setLinkLabel] = useState(prop.content?.link?.label ?? "");
-  const [linkUrl, setLinkUrl] = useState(prop.content?.link?.url ?? "");
+  const title = prop.content?.title ?? "";
+  const description = prop.content?.description ?? "";
+  const linkLabel = prop.content?.link?.label ?? "";
+  const linkUrl = prop.content?.link?.url ?? "";
 
   function commit(next: Partial<{ title: string; description: string; linkLabel: string; linkUrl: string }>) {
     onUpdateContent({
@@ -63,10 +69,7 @@ export function PropEditor({ prop, onMove, onRemove, onUpdateContent }: PropEdit
               id={`${prop.id}-title`}
               type="text"
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                commit({ title: e.target.value });
-              }}
+              onChange={(e) => commit({ title: e.target.value })}
             />
           </Field>
           <Field label="Description" htmlFor={`${prop.id}-description`}>
@@ -74,10 +77,7 @@ export function PropEditor({ prop, onMove, onRemove, onUpdateContent }: PropEdit
               id={`${prop.id}-description`}
               type="text"
               value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                commit({ description: e.target.value });
-              }}
+              onChange={(e) => commit({ description: e.target.value })}
             />
           </Field>
           <Field label="Link label" htmlFor={`${prop.id}-link-label`}>
@@ -85,10 +85,7 @@ export function PropEditor({ prop, onMove, onRemove, onUpdateContent }: PropEdit
               id={`${prop.id}-link-label`}
               type="text"
               value={linkLabel}
-              onChange={(e) => {
-                setLinkLabel(e.target.value);
-                commit({ linkLabel: e.target.value });
-              }}
+              onChange={(e) => commit({ linkLabel: e.target.value })}
             />
           </Field>
           <Field label="Link URL" htmlFor={`${prop.id}-link-url`} hint="http:, https: or mailto: only">
@@ -96,10 +93,7 @@ export function PropEditor({ prop, onMove, onRemove, onUpdateContent }: PropEdit
               id={`${prop.id}-link-url`}
               type="text"
               value={linkUrl}
-              onChange={(e) => {
-                setLinkUrl(e.target.value);
-                commit({ linkUrl: e.target.value });
-              }}
+              onChange={(e) => commit({ linkUrl: e.target.value })}
             />
           </Field>
         </div>

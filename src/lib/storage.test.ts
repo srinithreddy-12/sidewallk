@@ -79,6 +79,73 @@ describe("parseStoredOverrides", () => {
     const result = parseStoredOverrides(raw);
     expect(Object.keys(result)).toEqual([demoMember.id]);
   });
+
+  describe("intentional clearing survives a round trip (regression)", () => {
+    it("preserves a cleared description instead of falling back to demo data", () => {
+      const overrides: OverrideMap = { [demoMember.id]: { description: "" } };
+      const raw = serializeOverrides(overrides);
+      const result = parseStoredOverrides(raw);
+      expect(result[demoMember.id]?.description).toBe("");
+      expect("description" in (result[demoMember.id] ?? {})).toBe(true);
+    });
+
+    it("preserves a cleared name and tagline", () => {
+      const overrides: OverrideMap = { [demoMember.id]: { name: "", tagline: "" } };
+      const raw = serializeOverrides(overrides);
+      const result = parseStoredOverrides(raw);
+      expect(result[demoMember.id]).toEqual({ name: "", tagline: "" });
+    });
+
+    it("preserves a cleared action URL rather than dropping the whole action link", () => {
+      const overrides: OverrideMap = {
+        [demoMember.id]: { action: { id: "a", label: "Visit", url: "" } },
+      };
+      const raw = serializeOverrides(overrides);
+      const result = parseStoredOverrides(raw);
+      expect(result[demoMember.id]?.action).toEqual({ id: "a", label: "Visit", url: "" });
+    });
+
+    it("preserves artwork content with a title and an empty description, instead of discarding it", () => {
+      const prop: RoomProp = {
+        id: "p1",
+        kind: "framed-work",
+        x: 0,
+        y: 0,
+        tone: "#112233",
+        content: { title: "Low Tide", description: "" },
+      };
+      const overrides: OverrideMap = { [demoMember.id]: { room: { props: [prop] } } };
+      const raw = serializeOverrides(overrides);
+      const result = parseStoredOverrides(raw);
+      expect(result[demoMember.id]?.room?.props).toEqual([prop]);
+    });
+
+    it("still rejects a non-empty but unsafe action URL after the fix", () => {
+      const raw = JSON.stringify({
+        version: 1,
+        overrides: {
+          [demoMember.id]: { action: { id: "a", label: "Click", url: "javascript:alert(1)" } },
+        },
+      });
+      const result = parseStoredOverrides(raw);
+      expect(result[demoMember.id]?.action).toBeUndefined();
+    });
+
+    it("still rejects prop content where description is the wrong type, not just empty", () => {
+      const raw = JSON.stringify({
+        version: 1,
+        overrides: {
+          [demoMember.id]: {
+            room: {
+              props: [{ id: "p1", kind: "framed-work", x: 0, y: 0, tone: "#112233", content: { title: "X", description: 42 } }],
+            },
+          },
+        },
+      });
+      const result = parseStoredOverrides(raw);
+      expect(result[demoMember.id]?.room?.props?.[0]?.content).toBeUndefined();
+    });
+  });
 });
 
 describe("mergeOverride", () => {
