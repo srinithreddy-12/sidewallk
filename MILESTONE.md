@@ -129,6 +129,58 @@ say so in the final summary rather than leaving it implied.
   contrast math and `getBoundingClientRect` over every interactive element)
   rather than a full manual accessibility audit with assistive tech.
 
+## Visual redesign (Papermoth Press)
+
+Scoped to one building — Papermoth Press, its gallery interior, and the
+shared street composition — per the plan to finish one building before
+extending the redesign across the town. No feature, navigation or
+persistence changes.
+
+- [x] "press-front" exterior with a true-isometric gable roof, recessed
+      window/entrance detail, flower box and bracket-hung sign (Papermoth
+      only; every other building keeps its original flat-box exterior)
+- [x] Gallery interior: each framed-work prop renders an original,
+      deterministic riso-print motif (`generateArtwork`, seeded by prop id)
+      instead of a flat grey rectangle; pedestal, plant, bench, rug and lamp
+      are kind-specific shapes instead of bare boxes
+- [x] Paved street with kerb line and seeded tree/lamp-post scenery between
+      buildings, replacing the flat gradient backdrop
+- [x] Fixed two rendering bugs found in review (both shared across gallery,
+      studio and shop, since `RoomPropView`/`ArtworkFace` are one component
+      used by every room template, not duplicated per template):
+      - `ArtworkFace` rendered rectangles as `x - w/2` (centre-anchored), but
+        three of the four generated motifs supplied left-edge `x` values, so
+        every Papermoth frame had a shape drawn outside the mat. Standardized
+        `ArtworkShape.x`/`y` to always mean the shape's bounding-box centre
+        and corrected the affected motifs' values accordingly; also added a
+        unique, stable (prop-id-derived) `clipPath` around each frame's
+        artwork so any future out-of-bounds shape is clipped to the mat
+        instead of bleeding onto the wall.
+      - The pedestal's cap `IsoBox` had no `z0`, so it rendered at floor
+        level instead of on top of the column, and the book prop sat on an
+        invisible surface. Added `z0={columnHeight}` so the cap stacks on
+        the completed column.
+      - Verified in a real browser (desktop width) at `/b/papermoth-press`
+        (gallery), `/b/linden-and-kiln` (studio) and `/b/harbor-light-goods`
+        (shop): all three Papermoth frames now show artwork fully inside the
+        mat, the studio's framed-work renders correctly too, and pedestals
+        in both the gallery and the shop show the cap sitting visibly on top
+        of the column with the book resting on it. Also reopened the editor
+        on Papermoth Press to confirm the fix didn't disturb editor state.
+- [x] Unit tests (54), `tsc --noEmit`, `eslint .` and `next build` all pass
+      after the fixes
+
+### Limitations
+
+- The redesign and both bug fixes were verified only at desktop viewport
+  width in a real browser. Unlike Milestone 1's visitor flow (phone-width
+  checked down to 375px, see above), this redesign has **not** been checked
+  at phone width at all — the gable roof, recessed facade detail, artwork
+  frames and new street scenery could reflow or clip differently on a
+  narrow viewport, and that has not been confirmed either way.
+- The redesign covers Papermoth Press only; the other seven buildings still
+  use the original flat-box exterior and bare-box interior props.
+
 ## Infrastructure
 
 - `next dev` and `next build` now write to separate output directories

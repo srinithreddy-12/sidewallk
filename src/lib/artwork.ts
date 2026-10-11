@@ -2,7 +2,7 @@ import { seededRandom } from "./iso";
 
 export interface ArtworkShape {
   kind: "rect" | "circle" | "triangle";
-  /** Centre or anchor, unit square 0..1. */
+  /** Centre of the shape's bounding box, unit square 0..1, for every kind. */
   x: number;
   y: number;
   w: number;
@@ -45,17 +45,17 @@ export function generateArtwork(seed: string): ArtworkSpec {
     // Overlapping sun/moon circles, riso-registration offset.
     shapes.push({ kind: "circle", x: 0.42 + r(6) * 0.1, y: 0.4, w: 0.42, h: 0.42, color: inkA, opacity: 0.85 });
     shapes.push({ kind: "circle", x: 0.58 - r(7) * 0.1, y: 0.46, w: 0.3, h: 0.3, color: inkB, opacity: 0.75 });
-    shapes.push({ kind: "rect", x: 0.1, y: 0.78, w: 0.8, h: 0.06, color: inkC, opacity: 0.9 });
+    shapes.push({ kind: "rect", x: 0.5, y: 0.78, w: 0.8, h: 0.06, color: inkC, opacity: 0.9 });
   } else if (motif === 1) {
     // Horizon bands, like a dusk landscape.
-    shapes.push({ kind: "rect", x: 0.08, y: 0.62, w: 0.84, h: 0.22, color: inkA, opacity: 0.8 });
-    shapes.push({ kind: "rect", x: 0.08, y: 0.74, w: 0.84, h: 0.14, color: inkB, opacity: 0.85 });
+    shapes.push({ kind: "rect", x: 0.5, y: 0.62, w: 0.84, h: 0.22, color: inkA, opacity: 0.8 });
+    shapes.push({ kind: "rect", x: 0.5, y: 0.74, w: 0.84, h: 0.14, color: inkB, opacity: 0.85 });
     shapes.push({ kind: "circle", x: 0.28 + r(8) * 0.4, y: 0.32, w: 0.26, h: 0.26, color: inkC, opacity: 0.8 });
   } else if (motif === 2) {
     // Stacked geometric triangles, a type-foundry mark.
     shapes.push({ kind: "triangle", x: 0.5, y: 0.22, w: 0.5, h: 0.4, color: inkA, opacity: 0.85 });
     shapes.push({ kind: "triangle", x: 0.5 + (r(9) - 0.5) * 0.2, y: 0.5, w: 0.36, h: 0.3, color: inkB, opacity: 0.8 });
-    shapes.push({ kind: "rect", x: 0.2, y: 0.74, w: 0.6, h: 0.05, color: inkC, opacity: 0.9 });
+    shapes.push({ kind: "rect", x: 0.5, y: 0.74, w: 0.6, h: 0.05, color: inkC, opacity: 0.9 });
   } else {
     // Scattered field notes: a grid of small marks.
     const cols = 3;

@@ -25,20 +25,29 @@ function ArtworkFace({ u0, u1, z0, z1, scale, seed }: { u0: number; u1: number; 
   const alongY = iso(u0, 0, z0, scale);
   const matrix = faceMatrix(origin, alongX, alongY);
   const art = generateArtwork(seed);
+  // Stable per-prop id (not random) so the clip survives re-renders; sanitized because prop ids are not guaranteed to be valid SVG id characters.
+  const clipId = `artwork-clip-${seed.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 
   return (
     <g transform={matrix}>
-      <rect x={0} y={0} width={1} height={1} fill={art.background} />
-      {art.shapes.map((shape, i) => {
-        if (shape.kind === "circle") {
-          return <ellipse key={i} cx={shape.x} cy={shape.y} rx={shape.w / 2} ry={shape.h / 2} fill={shape.color} opacity={shape.opacity} />;
-        }
-        if (shape.kind === "triangle") {
-          const points = `${shape.x},${shape.y - shape.h / 2} ${shape.x + shape.w / 2},${shape.y + shape.h / 2} ${shape.x - shape.w / 2},${shape.y + shape.h / 2}`;
-          return <polygon key={i} points={points} fill={shape.color} opacity={shape.opacity} />;
-        }
-        return <rect key={i} x={shape.x - shape.w / 2} y={shape.y - shape.h / 2} width={shape.w} height={shape.h} fill={shape.color} opacity={shape.opacity} />;
-      })}
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={0} y={0} width={1} height={1} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        <rect x={0} y={0} width={1} height={1} fill={art.background} />
+        {art.shapes.map((shape, i) => {
+          if (shape.kind === "circle") {
+            return <ellipse key={i} cx={shape.x} cy={shape.y} rx={shape.w / 2} ry={shape.h / 2} fill={shape.color} opacity={shape.opacity} />;
+          }
+          if (shape.kind === "triangle") {
+            const points = `${shape.x},${shape.y - shape.h / 2} ${shape.x + shape.w / 2},${shape.y + shape.h / 2} ${shape.x - shape.w / 2},${shape.y + shape.h / 2}`;
+            return <polygon key={i} points={points} fill={shape.color} opacity={shape.opacity} />;
+          }
+          return <rect key={i} x={shape.x - shape.w / 2} y={shape.y - shape.h / 2} width={shape.w} height={shape.h} fill={shape.color} opacity={shape.opacity} />;
+        })}
+      </g>
     </g>
   );
 }
@@ -221,7 +230,7 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
       return (
         <g {...interactionProps}>
           <IsoBox u={u + w * 0.12} v={v + d * 0.12} w={w * 0.76} d={d * 0.76} h={columnHeight} scale={scale} bodyColor={prop.tone} />
-          <IsoBox u={u} v={v} w={w} d={d} h={capHeight} scale={scale} bodyColor={shade(prop.tone, 0.12)} />
+          <IsoBox u={u} v={v} w={w} d={d} h={capHeight} z0={columnHeight} scale={scale} bodyColor={shade(prop.tone, 0.12)} />
           {hasBook ? (
             <g transform={`translate(${bookTop.x}, ${bookTop.y - 6})`}>
               <polygon points="-13,2 0,-4 13,2 0,8" fill="#e8dcc6" stroke="#2d2a26" strokeWidth={0.75} />
