@@ -9,5 +9,5 @@
 .svg {
   display: block;
   width: 100%;
-  height: clamp(340px, 62vh, 600px);
+  height: clamp(380px, 66vh, 640px);
 }

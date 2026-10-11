@@ -1,6 +1,6 @@
 export type MemberCategory = "art" | "craft" | "design" | "food" | "music" | "writing";
 
-export type ExteriorKind = "gallery-front" | "studio-front" | "shop-front" | "cafe-front";
+export type ExteriorKind = "gallery-front" | "studio-front" | "shop-front" | "cafe-front" | "press-front";
 
 export type InteriorTemplate = "gallery" | "studio" | "shop";
 

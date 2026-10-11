@@ -52,6 +52,40 @@ export function ExteriorFacade({ kind, bodyColor, trimColor }: ExteriorFacadePro
           <circle cx={0.49} cy={0.46} r={0.012} fill={trimColor} />
         </g>
       );
+    case "press-front": {
+      const recess = shade(bodyColor, -0.38);
+      const plinth = shade(trimColor, -0.12);
+      const doorPanel = shade(bodyColor, -0.22);
+      const sheen = shade(glass, 0.3);
+      return (
+        <g>
+          {/* fascia band under the roofline, and finished corner boards */}
+          <rect x={0} y={0} width={1} height={0.09} fill={frame} />
+          <rect x={0} y={0.09} width={0.022} height={0.85} fill={frame} />
+          <rect x={0.978} y={0.09} width={0.022} height={0.85} fill={frame} />
+
+          {/* recessed display window, two panes over a shadowed reveal */}
+          <rect x={0.09} y={0.15} width={0.46} height={0.5} fill={recess} />
+          <rect x={0.105} y={0.165} width={0.43} height={0.47} fill={frame} />
+          <rect x={0.125} y={0.185} width={0.19} height={0.42} fill={glass} />
+          <rect x={0.325} y={0.185} width={0.19} height={0.42} fill={glass} />
+          <polygon points="0.14,0.21 0.22,0.21 0.16,0.58 0.14,0.58" fill={sheen} opacity={0.35} />
+          <rect x={0.09} y={0.63} width={0.46} height={0.035} fill={plinth} />
+
+          {/* recessed entrance: door set back in shadow, transom above, threshold below */}
+          <rect x={0.63} y={0.13} width={0.26} height={0.56} fill={recess} />
+          <rect x={0.645} y={0.145} width={0.23} height={0.1} fill={shade(glass, 0.1)} />
+          <rect x={0.655} y={0.26} width={0.21} height={0.4} fill={doorPanel} />
+          <rect x={0.672} y={0.285} width={0.176} height={0.18} fill={shade(glass, 0.05)} />
+          <rect x={0.655} y={0.56} width={0.21} height={0.08} fill={shade(doorPanel, -0.18)} />
+          <circle cx={0.83} cy={0.47} r={0.013} fill={trimColor} />
+          <rect x={0.63} y={0.685} width={0.26} height={0.028} fill={plinth} />
+
+          {/* painted base plinth the full width of the shopfront */}
+          <rect x={0} y={0.86} width={1} height={0.08} fill={plinth} />
+        </g>
+      );
+    }
     case "cafe-front":
       return (
         <g>

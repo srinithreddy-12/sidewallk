@@ -33,7 +33,7 @@ const papermoth: Member = {
   action: link("papermoth-action", "Visit the current show", "https://papermoth.example/visit"),
   building: {
     id: "papermoth-building",
-    exterior: "gallery-front",
+    exterior: "press-front",
     position: 0,
     bodyColor: "#c97b5f",
     trimColor: "#f3e3c8",
@@ -85,7 +85,7 @@ const papermoth: Member = {
         "papermoth-pedestal",
         "pedestal",
         2,
-        3,
+        4,
         "#b7a888",
         content(
           "Hand-bound book, 'Low Light'",
@@ -94,7 +94,7 @@ const papermoth: Member = {
         ),
       ),
       prop("papermoth-rug", "rug", 1, 3, "#8a6a52"),
-      prop("papermoth-bench", "bench", 4, 3, "#6b5440"),
+      prop("papermoth-bench", "bench", 3, 4, "#6b5440"),
       prop("papermoth-plant", "plant", 0, 2, "#4d6b4a"),
       prop("papermoth-lamp", "lamp", 5, 2, "#caa968"),
     ],

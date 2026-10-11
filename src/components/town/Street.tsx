@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { iso, isoDepth } from "@/lib/iso";
 import type { Member } from "@/lib/types";
 import { Building, buildingOrigin, BUILDING_DEPTH, BUILDING_SPACING, BUILDING_WIDTH } from "./Building";
+import { StreetGround } from "./StreetGround";
 import styles from "./Street.module.css";
 
 const VIEW_WIDTH = 1000;
@@ -175,6 +176,7 @@ export function Street({ members, totalCount, highlightedId, onEnter }: StreetPr
             className={isDragging ? `${styles.scene} ${styles.dragging}` : styles.scene}
             transform={`translate(${pan.x}, ${pan.y})`}
           >
+            <StreetGround slotCount={totalCount} scale={scale} />
             {sortedMembers.map((member) => (
               <Building
                 key={member.id}

@@ -1,21 +1,23 @@
 .page {
-  max-width: 1100px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) var(--space-8);
 }
 
 .header {
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .title {
   font-size: 2rem;
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
   color: var(--color-ink-soft);
   margin-top: var(--space-2);
   max-width: 640px;
+  line-height: 1.5;
 }
 
 .demoNotice {

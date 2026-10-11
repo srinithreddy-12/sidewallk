@@ -8,6 +8,8 @@ interface IsoBoxProps {
   h: number;
   scale: number;
   bodyColor: string;
+  /** Height the box's bottom face sits at, for stacking one box on another (e.g. a seat raised above its legs). */
+  z0?: number;
 }
 
 function toPoints(pts: IsoPoint[]): string {
@@ -22,9 +24,9 @@ function toPoints(pts: IsoPoint[]): string {
  * v+d (varying u) — never the back faces at u or v. The front-left face
  * (v = d) is where facade detail gets mapped on top of this.
  */
-export function IsoBox({ u, v, w, d, h, scale, bodyColor }: IsoBoxProps) {
+export function IsoBox({ u, v, w, d, h, scale, bodyColor, z0 = 0 }: IsoBoxProps) {
   const colors = faceColors(bodyColor);
-  const at = (du: number, dv: number, dz: number) => iso(u + du, v + dv, dz, scale);
+  const at = (du: number, dv: number, dz: number) => iso(u + du, v + dv, z0 + dz, scale);
 
   const top = [at(0, 0, h), at(w, 0, h), at(w, d, h), at(0, d, h)];
   const left = [at(0, d, 0), at(w, d, 0), at(w, d, h), at(0, d, h)];
