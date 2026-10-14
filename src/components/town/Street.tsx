@@ -13,7 +13,11 @@ const BASE_SCALE = 70;
 const MIN_ZOOM = 0.6;
 const MAX_ZOOM = 2;
 const PAN_STEP = 40;
-const DEFAULT_PAN = { x: VIEW_WIDTH * 0.1, y: VIEW_HEIGHT * 0.55 };
+// Chosen so Reset View frames the first few buildings with their name labels
+// fully on-screen and a small, deliberate sky margin above the rooflines —
+// see Street composition notes in MILESTONE.md for the measurements behind
+// these numbers.
+const DEFAULT_PAN = { x: 160, y: 130 };
 
 interface StreetProps {
   members: Member[];

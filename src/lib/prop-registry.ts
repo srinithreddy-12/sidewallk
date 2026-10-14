@@ -104,4 +104,5 @@ export const ROOM_PALETTE_OPTIONS = [
   "#ece0c9",
   "#d7c9d6",
   "#c9d6d2",
+  "#cdbfa3",
 ] as const;

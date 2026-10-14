@@ -181,6 +181,139 @@ persistence changes.
 - The redesign covers Papermoth Press only; the other seven buildings still
   use the original flat-box exterior and bare-box interior props.
 
+## Visual quality pass 2 (street composition + Papermoth interior)
+
+Scoped the same way as the first redesign pass: the street's shared
+composition and Papermoth Press's interior only. No new product features, no
+other building's exterior or interior touched, no change to the override
+system, persistence, or editor logic.
+
+### Street composition
+
+- [x] Inspected the initial view and Reset View (they share one `DEFAULT_PAN`
+      constant, so fixing one fixes both) and measured the actual rendered
+      geometry in the browser via `getBBox()` on every building and its name
+      label, rather than eyeballing it.
+- [x] Found the previous default already clipped Papermoth's own name label
+      on the left edge (`pan.x = 100` put part of "Papermoth Press" at
+      viewBox x < 0), on top of leaving roughly 39% of the frame as empty sky
+      above the rooflines.
+- [x] Changed `DEFAULT_PAN` in `Street.tsx` from `{x: 100, y: 308}` to
+      `{x: 160, y: 130}`, chosen by measurement, not feel: at this pan, the
+      first three buildings' name labels are each either fully inside the
+      1000×560 viewBox or fully outside it — none straddle an edge — and the
+      top sky margin drops to roughly 7% of the frame height. A fourth
+      building (Marrow Coffee Roastery) is intentionally left peeking in at
+      the bottom-right, roofline only, well before its own label would start,
+      signalling there's more to pan to.
+- [x] Re-verified after the change: re-ran the same `getBBox()` measurement
+      (not just a visual check) and confirmed zero straddling labels across
+      all eight buildings, then confirmed visually with a screenshot, then
+      panned away and clicked Reset View to confirm it returns to the same
+      framing.
+- [x] Left `DEFAULT_PAN.x`/`.y` as the single source of truth used by mount,
+      Reset View, and the search "show everyone" branch, so this fix applies
+      everywhere that state is used, not just one of the three.
+
+### Papermoth interior refinement
+
+All of this is gated by a `richDecor` flag computed in `RoomScene` as
+`memberId === "papermoth-press" && room.template === "gallery"` — threaded
+down as an optional prop to `RoomPropView` — so every other member's room
+renders through the exact same code path, unchanged. Confirmed this by
+loading Birch & Vellum Studio (the other `gallery`-template member) after the
+change: original frame size, original five-leaf plant, original wall tone,
+no workbench/storage/shadows.
+
+- [x] **Intentional arrangement.** Kept the existing three-frame gallery wall
+      and the rug/pedestal/bench viewing nook, and added a "print studio"
+      corner on the right (a workbench below the third frame, a flat-file
+      storage unit behind it) so the one room reads as both a gallery and a
+      working studio, matching the member's own description. Moved the lamp
+      from `(5, 2)` to `(5, 3.3)` — its old spot is now standing inside the
+      new storage unit.
+- [x] **Artwork scale.** Papermoth's framed-work pieces render larger under
+      `richDecor` (width 0.78→0.9 of the footprint, height 0.85→1.16 units)
+      than the shared default used by every other gallery/studio room.
+- [x] **Richer plant.** The existing editable plant prop gets a fuller
+      canopy (5→9 leaf clusters, two-tone pot) under `richDecor`; unchanged
+      everywhere else.
+- [x] **Workbench, print storage, books.** New fixed (non-editable,
+      non-persisted) set dressing in `PapermothStudioDecor.tsx`: a workbench
+      with a fanned stack of proof sheets, a brayer and an ink tin; a
+      three-drawer flat-file storage unit with printed-sheet edges peeking
+      out; two book stacks (workbench and storage top); an accent plant.
+      Nothing here is a `RoomProp` — it has no id, isn't in `room.props`,
+      can't be selected, moved or persisted, and has no effect on the
+      override system.
+- [x] **Material contrast.** Papermoth's own wall tone (`#cdbfa3`) replaces
+      the shared `GALLERY_WALL` constant it used to reuse, so its warm wood
+      furniture and riso inks read against a deeper background than Birch &
+      Vellum's lighter gallery wall. Also added `#cdbfa3` to
+      `ROOM_PALETTE_OPTIONS` — caught in testing that without this, the
+      editor's colour-swatch row showed *no* swatch as selected for
+      Papermoth (its colour wasn't one of the eight presets), which would
+      have read as a broken control; it's now a selectable preset for every
+      member, though only Papermoth defaults to it.
+- [x] **Contact shadows, consistent lighting.** Every floor prop in
+      Papermoth's room (pedestal, bench, plant, lamp; rug is flush with the
+      floor and skipped) now sits on a soft, low-opacity ellipse drawn in one
+      pass before any prop, so a shadow can never paint over the object
+      casting it. The fixed decor pieces share the same shadow recipe.
+- [x] **Clickable affordance.** Added a `:hover` brightness filter
+      (`RoomProp.module.css`) to every interactive room prop, matching the
+      existing `.button--primary:hover` pattern in `globals.css` and
+      automatically covered by the global `prefers-reduced-motion` rule. This
+      one change applies to every room, not just Papermoth's — it only
+      affects interaction feedback on hover, not any room's static
+      appearance at rest, so it was judged safe outside the Papermoth-only
+      scope. Keyboard focus (existing focus-ring circle) and touch (existing
+      44px+ invisible padding) affordances were already in place and were
+      re-verified, not changed.
+- [x] Found and fixed a real bug while building the decor: `PrintStack` and
+      `BookStack` were initially passed already-`iso()`-projected screen
+      coordinates but treated them as world coordinates and projected them
+      again, placing both off-screen. Caught by actually looking at the
+      rendered result (no books or proof sheets visible), not by code
+      review. Fixed by having both take a plain screen-space anchor point,
+      matching the existing `PictureLight` convention.
+- [x] Re-measured touch targets in the browser after every change
+      (`getBoundingClientRect` over every interactive element): 0 of 9 on
+      Papermoth's page measure under 44px in either dimension, same as
+      before the frames got larger.
+- [x] Opened the editor on Papermoth Press after all changes: member fields,
+      template/colour pickers (with the new swatch correctly shown pressed),
+      and the props list all still render and respond; closed it again with
+      no change to this flow.
+- [x] Unit tests (54), `tsc --noEmit`, `eslint .` and `next build` all pass.
+
+### Limitations
+
+- **Mobile viewport could not be verified.** `resize_window` reports success
+  but has no actual effect in this environment — confirmed by resizing to
+  390×844 on two independent tabs and reading `window.innerWidth/innerHeight`
+  back afterward both times; the browser window stays pinned to the host
+  display's full resolution regardless of the requested size. This is a
+  repeat of a limitation hit in the prior session, not something introduced
+  by this work. Everything above (street framing, Papermoth interior, touch
+  targets, editor) was verified at desktop width only. To check phone width
+  yourself: open `http://localhost:3000` in Chrome, open DevTools
+  (`Ctrl+Shift+I`), toggle the device toolbar (`Ctrl+Shift+M`), and pick a
+  ~390px preset; or, on a phone on the same network, visit
+  `http://192.168.1.44:3000` (the dev server's printed LAN address — confirm
+  it's still current in the terminal running `next dev`, as it can change
+  with the host's network).
+- The print-studio corner's "intentional arrangement" is eyeballed for this
+  one 6×5 room; it was checked for footprint overlaps by hand (grid math),
+  not by an automated collision check, so a future edit to Papermoth's prop
+  positions via the editor could visually collide with the fixed decor
+  without the editor knowing (the decor isn't registry-aware, by design,
+  since it isn't an editable prop).
+- Reset-to-demo-data and prop add/move/remove were not re-exercised end to
+  end this session (only editor *open* and the colour swatch were checked)
+  — those flows weren't touched by this work and were verified in the prior
+  milestone, but that verification wasn't repeated here.
+
 ## Infrastructure
 
 - `next dev` and `next build` now write to separate output directories

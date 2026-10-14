@@ -22,6 +22,10 @@ function prop(
 const GALLERY_WALL = "#d8cdbb";
 const STUDIO_WALL = "#e4dac8";
 const SHOP_WALL = "#ded0b8";
+// Papermoth's own wall tone — a touch deeper than the shared GALLERY_WALL so
+// its riso-print inks and warm wood furniture read with more contrast.
+// Scoped to this one member; every other gallery-template room is untouched.
+const PAPERMOTH_WALL = "#cdbfa3";
 
 const papermoth: Member = {
   id: "papermoth-press",
@@ -41,7 +45,7 @@ const papermoth: Member = {
   },
   room: {
     template: "gallery",
-    palette: GALLERY_WALL,
+    palette: PAPERMOTH_WALL,
     gridWidth: 6,
     gridHeight: 5,
     props: [
@@ -96,7 +100,10 @@ const papermoth: Member = {
       prop("papermoth-rug", "rug", 1, 3, "#8a6a52"),
       prop("papermoth-bench", "bench", 3, 4, "#6b5440"),
       prop("papermoth-plant", "plant", 0, 2, "#4d6b4a"),
-      prop("papermoth-lamp", "lamp", 5, 2, "#caa968"),
+      // Moved off (5,2) to clear the fixed print-storage decor now standing
+      // there — see PapermothStudioDecor. Still lights the work corner, just
+      // from in front of it rather than on top of it.
+      prop("papermoth-lamp", "lamp", 5, 3.3, "#caa968"),
     ],
   },
 };

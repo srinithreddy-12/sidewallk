@@ -44,7 +44,7 @@ export default function BuildingPage() {
       {isEditing ? <EditorPanel member={member} onClose={() => setIsEditing(false)} /> : null}
 
       <div className={styles.scene}>
-        <RoomScene room={member.room} />
+        <RoomScene room={member.room} memberId={member.id} />
       </div>
       <p className={styles.hint}>Tap or select a highlighted object to see more.</p>
 

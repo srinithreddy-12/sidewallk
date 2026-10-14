@@ -6,11 +6,18 @@ import { IsoBox } from "@/components/scene/IsoBox";
 import { PROP_REGISTRY } from "@/lib/prop-registry";
 import { generateArtwork } from "@/lib/artwork";
 import type { RoomProp as RoomPropModel } from "@/lib/types";
+import styles from "./RoomProp.module.css";
 
 interface RoomPropViewProps {
   prop: RoomPropModel;
   scale: number;
   onOpenContent: (prop: RoomPropModel) => void;
+  /**
+   * Opt-in, per-room visual upgrade for this milestone's Papermoth refinement
+   * (larger artwork, a fuller plant) — gated by caller so every other
+   * member's room renders exactly as before. See RoomScene's `richDecor`.
+   */
+  richDecor?: boolean;
 }
 
 function wallQuad(u0: number, u1: number, z0: number, z1: number, scale: number): string {
@@ -64,7 +71,7 @@ function PictureLight({ uMid, z1, scale }: { uMid: number; z1: number; scale: nu
   );
 }
 
-export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) {
+export function RoomPropView({ prop, scale, onOpenContent, richDecor = false }: RoomPropViewProps) {
   const [focused, setFocused] = useState(false);
   const definition = PROP_REGISTRY[prop.kind];
   const interactive = definition.isDisplay && Boolean(prop.content);
@@ -104,17 +111,23 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
   ) : null;
 
   if (definition.mount === "wall") {
-    const width = Math.min(definition.footprint.w * 0.78, definition.footprint.w) - 0.1;
-    const u0 = prop.x + 0.12;
+    // Papermoth's gallery wall gives framed work real scale — a statement
+    // piece, not a postage stamp — while every other room keeps the
+    // original, more modest frame so nothing elsewhere shifts.
+    const enlargeArtwork = richDecor && prop.kind === "framed-work";
+    const width = enlargeArtwork
+      ? Math.min(definition.footprint.w * 0.94, definition.footprint.w) - 0.04
+      : Math.min(definition.footprint.w * 0.78, definition.footprint.w) - 0.1;
+    const u0 = prop.x + (enlargeArtwork ? 0.04 : 0.12);
     const u1 = u0 + width;
-    const z0 = 1.0;
-    const z1 = prop.kind === "shelf-display" ? 1.55 : 1.85;
+    const z0 = enlargeArtwork ? 0.82 : 1.0;
+    const z1 = enlargeArtwork ? 1.98 : prop.kind === "shelf-display" ? 1.55 : 1.85;
     const frameColor = shade(prop.tone, -0.15);
-    const matInset = 0.04;
-    const zInset = (z1 - z0) * 0.08;
+    const matInset = enlargeArtwork ? 0.055 : 0.04;
+    const zInset = (z1 - z0) * (enlargeArtwork ? 0.06 : 0.08);
 
     return (
-      <g {...interactionProps}>
+      <g {...interactionProps} className={interactive ? styles.interactive : undefined}>
         {interactive ? (
           // Invisible padding so a narrow frame still clears the 44px touch target floor.
           <polygon points={wallQuad(u0 - 0.35, u1 + 0.35, z0 - 0.15, z1 + 0.15, scale)} fill="transparent" />
@@ -171,7 +184,7 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
       const shadeTop = iso(u + w / 2, v + d / 2, 0.92, scale);
       const poleColor = shade(prop.tone, -0.35);
       return (
-        <g {...interactionProps}>
+        <g {...interactionProps} className={interactive ? styles.interactive : undefined}>
           <ellipse cx={base.x} cy={base.y + 2} rx={10} ry={4} fill={poleColor} />
           <line x1={base.x} y1={base.y} x2={shadeBottom.x} y2={shadeBottom.y} stroke={poleColor} strokeWidth={2.5} />
           <ellipse cx={shadeBottom.x} cy={shadeBottom.y + 10} rx={20} ry={9} fill="#f6e9c8" opacity={0.35} />
@@ -187,19 +200,35 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
       const jitter = (i: number) => seededRandom(`${prop.id}:${i}`);
       const potTop = iso(u + w / 2, v + d / 2, 0.22, scale);
       const leafTones = ["#4d6b4a", "#5d7a52", "#3e5a3c"];
-      const leaves = Array.from({ length: 5 }, (_, i) => {
-        const angle = (i / 5) * Math.PI * 2 + jitter(i) * 0.6;
-        const radius = 10 + jitter(i + 5) * 6;
+      // Papermoth's plant reads as a fuller, more cared-for specimen: a
+      // two-tone pot and more, varied leaf clusters. Everywhere else keeps
+      // the original five-blob plant unchanged.
+      const leafCount = richDecor ? 9 : 5;
+      const leaves = Array.from({ length: leafCount }, (_, i) => {
+        const angle = (i / leafCount) * Math.PI * 2 + jitter(i) * 0.6;
+        const radius = (richDecor ? 8 : 10) + jitter(i + 5) * (richDecor ? 9 : 6);
         return {
           cx: potTop.x + Math.cos(angle) * radius,
-          cy: potTop.y - 14 - Math.abs(Math.sin(angle)) * 14 - jitter(i + 10) * 6,
-          r: 9 + jitter(i + 1) * 5,
+          cy: potTop.y - (richDecor ? 17 : 14) - Math.abs(Math.sin(angle)) * (richDecor ? 17 : 14) - jitter(i + 10) * 6,
+          r: (richDecor ? 8 : 9) + jitter(i + 1) * (richDecor ? 7 : 5),
           tone: leafTones[i % leafTones.length]!,
         };
       });
       return (
-        <g {...interactionProps}>
+        <g {...interactionProps} className={interactive ? styles.interactive : undefined}>
           <IsoBox u={u + w * 0.22} v={v + d * 0.22} w={w * 0.56} d={d * 0.56} h={0.26} scale={scale} bodyColor="#8a6a52" />
+          {richDecor ? (
+            <IsoBox
+              u={u + w * 0.22}
+              v={v + d * 0.22}
+              w={w * 0.56}
+              d={d * 0.56}
+              h={0.05}
+              z0={0.26}
+              scale={scale}
+              bodyColor={shade("#8a6a52", 0.18)}
+            />
+          ) : null}
           {leaves.map((leaf, i) => (
             <ellipse key={i} cx={leaf.cx} cy={leaf.cy} rx={leaf.r} ry={leaf.r * 0.8} fill={leaf.tone} opacity={0.92} />
           ))}
@@ -212,7 +241,7 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
       const legHeight = 0.16;
       const legColor = shade(prop.tone, -0.4);
       return (
-        <g {...interactionProps}>
+        <g {...interactionProps} className={interactive ? styles.interactive : undefined}>
           <IsoBox u={u + legInset} v={v + legInset} w={0.1} d={0.1} h={legHeight} scale={scale} bodyColor={legColor} />
           <IsoBox u={u + w - legInset - 0.1} v={v + legInset} w={0.1} d={0.1} h={legHeight} scale={scale} bodyColor={legColor} />
           <IsoBox u={u + legInset} v={v + d - legInset - 0.1} w={0.1} d={0.1} h={legHeight} scale={scale} bodyColor={legColor} />
@@ -228,7 +257,7 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
       const bookTop = iso(u + w / 2, v + d / 2, columnHeight + capHeight, scale);
       const hasBook = Boolean(prop.content);
       return (
-        <g {...interactionProps}>
+        <g {...interactionProps} className={interactive ? styles.interactive : undefined}>
           <IsoBox u={u + w * 0.12} v={v + d * 0.12} w={w * 0.76} d={d * 0.76} h={columnHeight} scale={scale} bodyColor={prop.tone} />
           <IsoBox u={u} v={v} w={w} d={d} h={capHeight} z0={columnHeight} scale={scale} bodyColor={shade(prop.tone, 0.12)} />
           {hasBook ? (
@@ -244,7 +273,7 @@ export function RoomPropView({ prop, scale, onOpenContent }: RoomPropViewProps) 
     default: {
       const height = prop.kind === "booking-desk" ? 0.62 : prop.kind === "product-table" ? 0.5 : 0.5;
       return (
-        <g {...interactionProps}>
+        <g {...interactionProps} className={interactive ? styles.interactive : undefined}>
           <IsoBox u={u} v={v} w={w} d={d} h={height} scale={scale} bodyColor={prop.tone} />
           {focusRing}
         </g>

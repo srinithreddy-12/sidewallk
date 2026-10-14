@@ -1,0 +1,7 @@
+.interactive {
+  cursor: pointer;
+}
+
+.interactive:hover {
+  filter: brightness(1.08);
+}
