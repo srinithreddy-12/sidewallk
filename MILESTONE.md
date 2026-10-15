@@ -675,6 +675,29 @@ them landing on top of each other.
 
 ## Infrastructure
 
+### Full release-path browser verification
+
+- [x] Drove the production build in Chrome through the DevTools Protocol at
+      1440×900 and 390×844. Covered the street, search, category filtering,
+      the accessible directory, all eight member rooms, content dialogs,
+      outbound actions, the editor, local-save persistence, reset, the missing
+      member route, and reduced-motion handling.
+- [x] Measured every visible interactive element during the sweep. Fixed the
+      member breadcrumb and missing-member recovery link, the only two controls
+      below the required 44×44 px target. Re-ran the sweep with zero undersized
+      controls and zero horizontal overflow.
+- [x] Confirmed Escape closes content dialogs and restores focus, unsafe
+      `javascript:` actions are not rendered, deliberate edits survive reload,
+      reset removes the override, and the browser console has no meaningful
+      errors. Added the Sidewallk app icon so Chrome no longer requests a
+      missing site asset.
+
+The development server exhausted the available Node heap during the first
+all-pages sweep on this 8 GB machine. The production build and production
+server completed the same sweep without a crash. This remains an environment
+and development-server stability limitation; it does not establish behavior
+on other machines.
+
 - `next dev` and `next build` now write to separate output directories
   (`.next-dev/` vs `.next/`, chosen via `NODE_ENV` in `next.config.ts`) so
   running a build no longer corrupts a live dev server's cache — confirmed
