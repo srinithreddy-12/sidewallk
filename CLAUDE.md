@@ -1,5 +1,17 @@
 # Architecture and conventions
 
+## Visual reset
+
+`Neighborhood.tsx` owns camera/navigation state. `NeighborhoodArt.tsx` draws
+original SVG ground and buildings using the shared `iso()` projection.
+`lib/neighborhood.ts` maps stable building positions onto two rows without
+changing persisted models. The original Street renderer remains available.
+`Brand.tsx` provides the shared compact wordmark/navigation link.
+RoomScene retains individual editable props, content dialogs and local
+persistence; it adds a projected window, timber floor and HTML content
+buttons for small screens. The editor opens in the existing focus-trapping
+Dialog. The public visitor UI has no account or payment workflow.
+
 `SPEC.md` is the scope. `AGENTS.md` is the working agreement and the rules you
 must not break. This file is the technical shape of the project.
 

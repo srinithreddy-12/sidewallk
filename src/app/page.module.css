@@ -1,25 +1,6 @@
-.page {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: var(--space-5) var(--space-4) var(--space-8);
-}
-
-.header {
-  margin-bottom: var(--space-4);
-}
-
-.title {
-  font-size: 2rem;
-  letter-spacing: -0.01em;
-}
-
-.subtitle {
-  color: var(--color-ink-soft);
-  margin-top: var(--space-2);
-  max-width: 640px;
-  line-height: 1.5;
-}
-
-.demoNotice {
-  margin-top: var(--space-3);
-}
+.page{min-height:100dvh;background:#e5eee5}.nav{height:76px;padding:0 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #d9e1d5;background:#f7f8f2;gap:24px}.navCenter{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:600;color:#4b6352}.townDot{height:7px;width:7px;border-radius:50%;background:#839876}.navDivider{color:#bcc8b5;margin:0 10px}.demo{font-size:10px;text-transform:uppercase;letter-spacing:1px}.directoryButton{border:0;min-height:44px;background:transparent;font-size:12px;font-weight:650;color:#2a4b38;cursor:pointer}.stage{position:relative}.intro{position:absolute;left:5%;top:70px;width:300px;z-index:2;pointer-events:none}.intro>*{pointer-events:auto}.eyebrow{font-size:10px;font-weight:750;letter-spacing:2px;text-transform:uppercase;color:#61775c;margin:0 0 25px}.intro h1{font-family:var(--font-display);font-size:64px;font-weight:500;line-height:1.04;letter-spacing:-3px;color:#254633}.intro h1 em{font-weight:400;color:#71855e}.subtitle{font-size:13px;line-height:1.85;color:#526851;max-width:265px;margin:23px 0 26px}.search{display:flex;align-items:center;gap:10px;background:#fafbf6;border:1px solid #d2ddcc;border-radius:12px;padding:0 14px;height:48px;color:#6d8065;box-shadow:0 3px 12px #2e513708}.search input{background:transparent;border:0;outline:none;width:100%;min-width:0;font-size:12px;color:#294936;height:44px}.search:focus-within{outline:2px solid #386347;outline-offset:2px}.categories{display:flex;gap:4px 6px;flex-wrap:wrap;margin-top:14px}.categories button{border:1px solid transparent;border-radius:22px;min-height:44px;padding:0 12px;background:transparent;font-size:11px;color:#526851;cursor:pointer}.categories button[aria-pressed=true]{background:#f9faf3;border-color:#c8d6c0;color:#284c35}.featured{position:absolute;z-index:2;left:5%;bottom:85px;width:300px;padding:20px 22px;background:#f9faf4;border:1px solid #d4dfcc;border-radius:18px;box-shadow:0 10px 35px #3655360a}.featuredTop{display:flex;align-items:center;gap:9px;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#66765d}.featuredIcon{font-size:19px;color:#607757}.number{margin-left:auto;color:#99a78e}.featured h2{font-size:22px;letter-spacing:-.5px;font-weight:500;margin:13px 0 7px}.featured p{font-size:12px;line-height:1.6;color:#63705c;margin:0 0 15px}.featured button{display:flex;width:100%;min-height:44px;align-items:center;justify-content:space-between;padding:0;background:none;border:0;border-top:1px solid #e0e5d9;color:#36523c;font-size:12px;font-weight:650;cursor:pointer}.directory{margin-left:390px;min-height:calc(100dvh - 76px);padding:60px 40px 80px}.directory h2{font-size:36px;margin-bottom:30px}
+@media(min-width:1600px){.intro{top:90px;width:340px}.intro h1{font-size:78px}.featured{width:340px}.subtitle{font-size:14px}}
+@media(max-width:1050px){.intro{left:30px;width:260px;top:35px}.intro h1{font-size:52px}.featured{left:30px;width:260px}.nav{padding:0 25px}.navCenter{display:none}.directory{margin-left:300px;padding:40px 25px}}
+@media(max-width:760px){.nav{height:66px;padding:0 20px}.directoryButton{font-size:11px}.intro{position:relative;top:auto;left:auto;width:auto;padding:32px 24px 0}.intro h1{font-size:48px;line-height:1.04;letter-spacing:-2px}.intro h1 br{display:none}.intro h1 em{display:block}.eyebrow{margin-bottom:16px;font-size:9px}.subtitle{max-width:340px;margin:16px 0 20px;font-size:12px}.search{max-width:420px}.categories{max-width:400px}.featured{position:relative;bottom:auto;left:auto;margin:-10px 20px 28px;width:auto}.directory{margin:0;padding:35px 24px}.stage{padding-bottom:1px}.directory h2{font-size:30px}}
+@media(min-width:1600px){.intro{width:360px}.intro h1{font-size:64px;line-height:1.07;letter-spacing:-2.5px}.subtitle{max-width:290px}.featured{width:340px}}
+@media(max-width:760px){.intro h1{font-size:46px}.intro h1 br{display:inline}.intro h1 br:first-of-type{display:none}}

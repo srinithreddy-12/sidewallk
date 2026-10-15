@@ -49,3 +49,6 @@ desktop.ini
 
 # Agent scratch
 .claude/settings.local.json
+source-snapshot.zip
+.verification-cache/
+review-output/

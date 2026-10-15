@@ -1,14 +1,14 @@
 :root {
-  --color-sky: #f4ecdb;
+  --color-sky: #e5eee5;
   --color-sky-deep: #e9dcc0;
   --color-ground: #cdbb98;
-  --color-ink: #211a14;
-  --color-ink-soft: #52453a;
-  --color-paper: #fbf6ee;
-  --color-paper-dim: #f1e8d8;
-  --color-accent: #975c47;
+  --color-ink: #294433;
+  --color-ink-soft: #536650;
+  --color-paper: #fafbf5;
+  --color-paper-dim: #eaf0e3;
+  --color-accent: #315a41;
   --color-accent-ink: #fbf6ee;
-  --color-border: #d8cdbb;
+  --color-border: #d5dfce;
   --color-focus: #2f6b5e;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -191,3 +191,7 @@ select {
   border-radius: 999px;
   padding: 2px var(--space-2);
 }
+.brand {display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:#254733;font-size:25px;letter-spacing:-1.3px;font-weight:750;min-height:44px}
+.brand-dot {font-size:9px;align-self:flex-start;margin-top:7px;margin-left:-5px;letter-spacing:0}
+.button {text-decoration:none;border-radius:12px;font-size:12px}
+p {line-height:1.65}

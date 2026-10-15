@@ -1,5 +1,20 @@
 # Sidewallk
 
+## Visual reset — 15 October 2026
+
+The visual redesign builds on committed source `bbaf9fc` and retains the
+existing editor, content, URL validation and local persistence.
+
+Run `npm run dev` and open http://localhost:3000. For a second preview beside
+another dev server, run `npm run dev -- --port 3002`.
+The town now fills the workspace with a two-row neighborhood, a shared
+square, varied roofs, storefront details, trees, search and category filters.
+The room uses a separate visitor information rail and a larger cutaway scene
+with a window, wood floor, editable content and a modal local editor.
+
+Existing state/persistence/URL validation code is retained. Map coordinates
+are a presentation layer and do not rewrite saved building positions.
+
 An explorable digital town for creative communities. Organizers run towns,
 members have buildings containing their work, and visitors walk the street and
 step inside without signing in.

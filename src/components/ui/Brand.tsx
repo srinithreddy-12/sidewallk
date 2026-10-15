@@ -1,0 +1,2 @@
+import Link from "next/link";
+export function Brand() { return <Link href="/" className="brand" aria-label="Sidewallk home"><svg width="29" height="29" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 18 16 11 28 18 16 25Z" fill="#ea8d6b"/><path d="M4 10 16 3 28 10 16 17Z" fill="#265848"/><path d="M4 10v8l12 7v-8Z" fill="#356a55"/><path d="M16 17v8l12-7v-8Z" fill="#183e32"/></svg>sidewallk<span className="brand-dot">•</span></Link>; }

@@ -1,5 +1,35 @@
 # Milestone 1 — visitor walks the street and steps inside
 
+## Visual reset — 15 October 2026
+
+- Rebuilt the visitor shell: compact brand/navigation, search, category
+  filters, an accessible directory, and a selected-member entry panel.
+- Replaced the long diagonal street with eight storefronts across two rows,
+  paths, a crossing, square, trees, varied roofs and planted frontage.
+- Added camera pan/zoom/recenter, filtered-result camera framing, a drag
+  threshold to separate navigation from clicks, and keyboard camera controls.
+- Rebuilt the interior page around a visitor information rail and a larger
+  cutaway. Added a window, projected timber floor, HTML content buttons and
+  a modal editor using the existing focus-trapping Dialog.
+- Corrected the print workbench into a raised tabletop on legs.
+- Kept the existing member/content models, URL validation, overrides and
+  persistence. This preview uses port 3002 and its own browser storage origin.
+- Typecheck, lint and production build passed. All 54 existing tests passed
+  using Vitest's programmatic runner with config bundling bypassed and cache
+  disabled (the ordinary runner hits filesystem restrictions in this managed
+  workspace; the reused dependency folder is read-only).
+- Chrome desktop was visually inspected. Opening an SVG artwork was verified
+  through the live accessibility tree. Chrome's actual responsive toolbar
+  showed 390 × 844; the gallery layout and modal editor were inspected there.
+
+Limits: this remains local sample content. The redesign was built and checked
+in a separate working copy based on bbaf9fc. No deployment was performed.
+A full phone visitor flow, drag/scroll behavior,
+focus restoration and refresh persistence were not manually reverified in
+this pass. Small-screen content has separate 44px HTML buttons; map labels
+can still be small at the overview zoom. More template-specific furnishing
+and unique architecture remain possible future design work.
+
 Tick an item only when it has actually been run, not when the code looks
 right. Add a line under **Limitations** for anything that is partly done, and
 say so in the final summary rather than leaving it implied.
