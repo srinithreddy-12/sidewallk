@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_TOWN } from "./demo-data";
+import { PROP_REGISTRY } from "./prop-registry";
 import { createProp, moveProp } from "./room-edit";
 import {
   findFreeLayout,
@@ -8,15 +9,38 @@ import {
   papermothPlantLayouts,
   papermothStorageLayouts,
   papermothWorkbenchLayouts,
+  resolvePapermothDecor,
   shopCounterLayouts,
   studioCrateLayouts,
   studioPegboardSpans,
   type GridRect,
+  type PapermothDecorResolution,
 } from "./template-decor";
 import type { Room } from "./types";
 
 function overlaps(a: GridRect, b: GridRect): boolean {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/** Flattens a PapermothDecorResolution's non-null pieces into a labeled list of rects, for pairwise-overlap assertions. */
+function resolvedRects(resolution: PapermothDecorResolution): { piece: string; rect: GridRect }[] {
+  const pieces: [string, GridRect[] | null][] = [
+    ["workbench", resolution.workbench],
+    ["storage", resolution.storage],
+    ["plant", resolution.plant],
+  ];
+  return pieces.filter(([, layout]) => layout !== null).map(([piece, layout]) => ({ piece, rect: layout![0]! }));
+}
+
+function expectPairwiseNonOverlapping(resolution: PapermothDecorResolution) {
+  const rects = resolvedRects(resolution);
+  for (let i = 0; i < rects.length; i++) {
+    for (let j = i + 1; j < rects.length; j++) {
+      const a = rects[i]!;
+      const b = rects[j]!;
+      expect(overlaps(a.rect, b.rect), `${a.piece} should not overlap ${b.piece}`).toBe(false);
+    }
+  }
 }
 
 function member(id: string) {
@@ -240,11 +264,11 @@ describe("Papermoth print-studio corner placement", () => {
 
   it("every piece finds its original spot in the untouched demo room", () => {
     const { gridWidth, gridHeight } = papermoth.room;
-    expect(findFreeLayout(papermoth.room, papermothWorkbenchLayouts(gridWidth, gridHeight))).toEqual(
-      papermothWorkbenchLayouts(gridWidth, gridHeight)[0],
+    expect(findFreeLayout(papermoth.room, papermothWorkbenchLayouts(gridWidth))).toEqual(
+      papermothWorkbenchLayouts(gridWidth)[0],
     );
-    expect(findFreeLayout(papermoth.room, papermothStorageLayouts(gridWidth, gridHeight))).toEqual(
-      papermothStorageLayouts(gridWidth, gridHeight)[0],
+    expect(findFreeLayout(papermoth.room, papermothStorageLayouts(gridWidth))).toEqual(
+      papermothStorageLayouts(gridWidth)[0],
     );
     expect(findFreeLayout(papermoth.room, papermothPlantLayouts(gridWidth, gridHeight))).toEqual(
       papermothPlantLayouts(gridWidth, gridHeight)[0],
@@ -252,7 +276,7 @@ describe("Papermoth print-studio corner placement", () => {
   });
 
   it("falls back to a different spot after dragging a prop onto the workbench's default footprint", () => {
-    const layouts = papermothWorkbenchLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const layouts = papermothWorkbenchLayouts(papermoth.room.gridWidth);
     const defaultSpot = layouts[0]!;
     const target = defaultSpot[0]!;
     const lamp = papermoth.room.props.find((p) => p.id === "papermoth-lamp");
@@ -278,7 +302,7 @@ describe("Papermoth print-studio corner placement", () => {
   });
 
   it("falls back for the storage unit when a newly added prop is dragged onto its default footprint", () => {
-    const layouts = papermothStorageLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const layouts = papermothStorageLayouts(papermoth.room.gridWidth);
     const defaultSpot = layouts[0]!;
     const target = defaultSpot[0]!;
 
@@ -329,7 +353,7 @@ describe("Papermoth print-studio corner placement", () => {
   });
 
   it("omits the workbench entirely once every one of its candidate spots is blocked", () => {
-    const layouts = papermothWorkbenchLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const layouts = papermothWorkbenchLayouts(papermoth.room.gridWidth);
     const props = [
       ...papermoth.room.props,
       ...layouts.map((layout, i) => ({ id: `blocker-${i}`, kind: "bench" as const, x: layout[0]!.x, y: layout[0]!.y, tone: "#000" })),
@@ -339,7 +363,7 @@ describe("Papermoth print-studio corner placement", () => {
   });
 
   it("resolves the three pieces independently — blocking the workbench alone doesn't take down the storage or the plant", () => {
-    const workbenchLayouts = papermothWorkbenchLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const workbenchLayouts = papermothWorkbenchLayouts(papermoth.room.gridWidth);
     const props = [
       ...papermoth.room.props,
       ...workbenchLayouts.map((layout, i) => ({ id: `blocker-${i}`, kind: "bench" as const, x: layout[0]!.x, y: layout[0]!.y, tone: "#000" })),
@@ -347,11 +371,151 @@ describe("Papermoth print-studio corner placement", () => {
     const room = { ...papermoth.room, props };
 
     expect(findFreeLayout(room, workbenchLayouts)).toBeNull();
-    expect(findFreeLayout(room, papermothStorageLayouts(room.gridWidth, room.gridHeight))).toEqual(
-      papermothStorageLayouts(room.gridWidth, room.gridHeight)[0],
+    expect(findFreeLayout(room, papermothStorageLayouts(room.gridWidth))).toEqual(
+      papermothStorageLayouts(room.gridWidth)[0],
     );
     expect(findFreeLayout(room, papermothPlantLayouts(room.gridWidth, room.gridHeight))).toEqual(
       papermothPlantLayouts(room.gridWidth, room.gridHeight)[0],
     );
+  });
+});
+
+/**
+ * The entry point RoomScene actually renders through. Unlike the
+ * independent `findFreeLayout` calls above, `resolvePapermothDecor`
+ * resolves all three pieces together, so a piece resolved second or third
+ * also avoids whatever an earlier piece already claimed. These scenarios
+ * specifically target the bug that slipped through independent resolution:
+ * two pieces both pushed toward the same front-of-room fallback, which
+ * overlaps each other even though each individually avoids every editable
+ * room prop.
+ */
+describe("resolvePapermothDecor", () => {
+  const papermoth = member("papermoth-press");
+  const { gridWidth, gridHeight } = papermoth.room;
+
+  // A 1×1 footprint ("lamp") is the smallest a floor prop can be, and
+  // several target candidates (the accent plant's especially, at
+  // 0.26×0.26) are smaller than that — so a blocker anchored at the
+  // candidate's corner would overhang into whatever sits up to a full unit
+  // away, which in this tightly-packed room can be a neighbouring piece's
+  // own candidate. Centering the 1×1 blocker on the candidate's centre
+  // instead still guarantees it overlaps that candidate (their centres
+  // coincide) while halving the overhang in every direction.
+  function blockersFor(layout: GridRect[][], indices: number[], prefix: string) {
+    return indices.map((i) => {
+      const rect = layout[i]!.at(0)!;
+      const cx = rect.x + rect.w / 2;
+      const cy = rect.y + rect.h / 2;
+      return { id: `${prefix}-${i}`, kind: "lamp" as const, x: cx - 0.5, y: cy - 0.5, tone: "#000" };
+    });
+  }
+
+  it("resolves all three pieces to their original spots in the untouched demo room", () => {
+    const resolution = resolvePapermothDecor(papermoth.room);
+    expect(resolution.workbench).toEqual(papermothWorkbenchLayouts(gridWidth)[0]);
+    expect(resolution.storage).toEqual(papermothStorageLayouts(gridWidth)[0]);
+    expect(resolution.plant).toEqual(papermothPlantLayouts(gridWidth, gridHeight)[0]);
+    expectPairwiseNonOverlapping(resolution);
+  });
+
+  it("two pieces forced to their second candidate both succeed, and still don't overlap each other", () => {
+    // Block only each piece's first (back-right) candidate, so both fall
+    // back to their second (mirrored back-left) one.
+    const workbenchLayouts = papermothWorkbenchLayouts(gridWidth);
+    const storageLayouts = papermothStorageLayouts(gridWidth);
+    const props = [
+      ...papermoth.room.props,
+      ...blockersFor(workbenchLayouts, [0], "wb"),
+      ...blockersFor(storageLayouts, [0], "st"),
+    ];
+    const room = { ...papermoth.room, props };
+    const resolution = resolvePapermothDecor(room);
+
+    expect(resolution.workbench).toEqual(workbenchLayouts[1]);
+    expect(resolution.storage).toEqual(storageLayouts[1]);
+    expect(resolution.plant).toEqual(papermothPlantLayouts(gridWidth, gridHeight)[0]);
+    expectPairwiseNonOverlapping(resolution);
+  });
+
+  it("two pieces forced to the same colliding front fallback: the first claims it, the second is omitted instead of overlapping it", () => {
+    // Block each piece's first two candidates, so both workbench and
+    // storage are pushed toward their third (front) candidate — which, by
+    // construction, overlap each other (this is the exact bug report: two
+    // independently-resolved pieces both landing on the front fallback).
+    const workbenchLayouts = papermothWorkbenchLayouts(gridWidth);
+    const storageLayouts = papermothStorageLayouts(gridWidth);
+    // Confirm the premise: the two pieces' front candidates really do
+    // overlap, so a resolver that didn't reserve earlier picks would fail.
+    expect(overlaps(workbenchLayouts[2]!.at(0)!, storageLayouts[2]!.at(0)!)).toBe(true);
+
+    const props = [
+      ...papermoth.room.props,
+      ...blockersFor(workbenchLayouts, [0, 1], "wb"),
+      ...blockersFor(storageLayouts, [0, 1], "st"),
+    ];
+    const room = { ...papermoth.room, props };
+    const resolution = resolvePapermothDecor(room);
+
+    expect(resolution.workbench).toEqual(workbenchLayouts[2]);
+    expect(resolution.storage).toBeNull();
+    // The plant is untouched by any blocker and sits nowhere near the
+    // workbench's front fallback, so it should resolve normally.
+    expect(resolution.plant).toEqual(papermothPlantLayouts(gridWidth, gridHeight)[0]);
+    expectPairwiseNonOverlapping(resolution);
+  });
+
+  it("all three pieces forced toward the front: workbench and plant both land (without overlapping each other), storage is correctly omitted instead of overlapping workbench", () => {
+    const workbenchLayouts = papermothWorkbenchLayouts(gridWidth);
+    const storageLayouts = papermothStorageLayouts(gridWidth);
+    const plantLayouts = papermothPlantLayouts(gridWidth, gridHeight);
+    // Confirm the premise: workbench's and storage's front candidates
+    // genuinely collide with each other (this is the bug report), while
+    // the plant's front candidate happens to collide with neither — so
+    // this scenario exercises both outcomes the fix needs to get right in
+    // one pass: arbitration between two colliding pieces, and a third
+    // piece resolving independently alongside whatever the first claimed.
+    expect(overlaps(workbenchLayouts[2]!.at(0)!, storageLayouts[2]!.at(0)!)).toBe(true);
+    expect(overlaps(workbenchLayouts[2]!.at(0)!, plantLayouts[2]!.at(0)!)).toBe(false);
+
+    const props = [
+      ...papermoth.room.props,
+      ...blockersFor(workbenchLayouts, [0, 1], "wb"),
+      ...blockersFor(storageLayouts, [0, 1], "st"),
+      ...blockersFor(plantLayouts, [0, 1], "pl"),
+    ];
+    const room = { ...papermoth.room, props };
+    const resolution = resolvePapermothDecor(room);
+
+    // workbench resolves first and claims the shared front fallback;
+    // storage's only remaining candidate collides with that reservation
+    // and is correctly omitted rather than drawn on top of it; plant
+    // resolves third and finds its own front candidate still clear.
+    expect(resolution.workbench).toEqual(workbenchLayouts[2]);
+    expect(resolution.storage).toBeNull();
+    expect(resolution.plant).toEqual(plantLayouts[2]);
+    // Not a vacuous pass: two of the three genuinely resolved.
+    expect(resolvedRects(resolution).length).toBe(2);
+    expectPairwiseNonOverlapping(resolution);
+  });
+
+  it("never overlaps an editable prop even while pieces are being pushed into each other's way", () => {
+    const workbenchLayouts = papermothWorkbenchLayouts(gridWidth);
+    const storageLayouts = papermothStorageLayouts(gridWidth);
+    const props = [
+      ...papermoth.room.props,
+      ...blockersFor(workbenchLayouts, [0, 1], "wb"),
+      ...blockersFor(storageLayouts, [0], "st"),
+    ];
+    const room = { ...papermoth.room, props };
+    const resolution = resolvePapermothDecor(room);
+
+    const propRects = room.props
+      .filter((p) => PROP_REGISTRY[p.kind].mount === "floor")
+      .map((p) => ({ x: p.x, y: p.y, w: PROP_REGISTRY[p.kind].footprint.w, h: PROP_REGISTRY[p.kind].footprint.h }));
+    for (const { rect } of resolvedRects(resolution)) {
+      for (const propRect of propRects) expect(overlaps(rect, propRect)).toBe(false);
+    }
+    expectPairwiseNonOverlapping(resolution);
   });
 });

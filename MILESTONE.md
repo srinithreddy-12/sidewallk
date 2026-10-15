@@ -550,7 +550,7 @@ template decor piece now goes through.
 
 ### Limitations
 
-- Papermoth's three pieces resolve independently (like `StudioWorkCorner`),
+- ~~Papermoth's three pieces resolve independently (like `StudioWorkCorner`),
   not as a composite (like `ShopCounterDecor`) — so it's possible, in an
   edited room, for the workbench to land at its mirrored back-left spot
   while the storage unit stays at its original back-right spot, losing the
@@ -559,7 +559,14 @@ template decor piece now goes through.
   exact visual coupling under arbitrary edits was not, and would need a
   composite candidate list (workbench + storage + plant tried together) to
   fix, at the cost of all three disappearing together whenever any one of
-  them can't find a spot.
+  them can't find a spot.~~ **Resolved** — this predicted exactly the bug
+  that surfaced as literal overlap between two pieces both reaching their
+  front fallback. Fixed below in "Fix Codex finding: Papermoth decor pieces
+  reserve each other's footprints" via `resolvePapermothDecor`'s shared
+  reservation list. The three pieces are still resolved as independent (not
+  composite) candidates, so visual *adjacency* when one falls back and
+  another doesn't is still not guaranteed — but *overlap* between them now
+  is, provably, impossible.
 - As with every pass since the extension became unavailable, visual
   verification used headless Chrome driven directly over the DevTools
   protocol, not the `claude-in-chrome` extension — an actual interactive
@@ -567,6 +574,104 @@ template decor piece now goes through.
   of Papermoth's decor spots and watching it fall back, was not performed;
   that behavior is covered by the unit tests against the real
   `room-edit.ts` functions instead.
+
+## Fix Codex finding: Papermoth decor pieces reserve each other's footprints
+
+Builds on `ca16814`. Closes the gap that fix's own Limitations section
+predicted and left open: Papermoth's workbench, storage and accent plant
+each avoided editable room props independently, but not each other — when
+two pieces both fell back to their front-of-room candidate, nothing stopped
+them landing on top of each other.
+
+- [x] Added `resolvePapermothDecor` to `lib/template-decor.ts`: one pure
+      function that resolves all three pieces together in a fixed priority
+      order (workbench, then storage, then plant), passing `findFreeLayout`
+      a growing `reserved` list of every rect already accepted for an
+      earlier piece in the same call — so no two pieces can ever land on
+      overlapping spots, not just no piece on an editable prop.
+- [x] Extended `findFreeLayout` with an optional third parameter,
+      `extraOccupied: GridRect[]` (default `[]`), checked alongside room
+      props. Backward compatible — every other caller (gallery/studio/shop
+      decor) is unaffected and untouched.
+- [x] `PapermothStudioDecor` now calls `resolvePapermothDecor` once instead
+      of three independent `findFreeLayout` calls.
+- [x] Found and fixed two real, previously-undetected collisions in the
+      candidate geometry itself while building the tests below — not bugs
+      in the new reservation logic, but in candidates the *previous* fix
+      introduced without checking them against the real room closely
+      enough:
+      - storage's and the accent plant's mirrored "back-left" candidate
+        both landed on top of Papermoth's own permanent `papermoth-plant`
+        prop at grid (0,2)-(1,3), making that fallback silently unreachable
+        in the one room that uses it. Moved both past the plant's right
+        edge instead of mirroring all the way to the wall.
+      - workbench's and storage's "front" candidate both landed on
+        Papermoth's own permanent `papermoth-bench` and `papermoth-lamp`
+        props. Moved both to the one verified-clear gap left in the front
+        third of the room (left of the bench, below the rug).
+      Both were caught by writing tests against the *real* Papermoth room
+      rather than a synthetic fixture, and by actually running them instead
+      of trusting hand-derived coordinate arithmetic a second time — twice
+      in this pass, a test's expectation (based on manual geometry) turned
+      out to be wrong and the production code was innocent; a small
+      throwaway diagnostic script that printed every candidate's real
+      collision status against every real floor prop settled it
+      conclusively both times, faster than more hand-checking would have.
+- [x] Unit tests (`template-decor.test.ts`, 5 new in a `resolvePapermothDecor`
+      describe block, 26 in the file total): baseline resolves all three to
+      their original spots; two pieces individually forced to their second
+      candidate both succeed without overlapping each other; two pieces
+      forced toward their (verified, deliberately) colliding front
+      candidate — the first to resolve claims it, the second is correctly
+      omitted instead of overlapping it; all three forced toward the front
+      — workbench and the plant both land without overlapping each other
+      (the plant's front candidate happens to collide with neither), while
+      storage is correctly omitted; and a prop-overlap sweep confirming no
+      resolved rect ever touches an editable floor prop even while pieces
+      are being pushed into each other's way. Every test asserts pairwise
+      non-overlap across whatever actually resolved, not just equality for
+      the one piece nominally under test.
+- [x] Fixed a blocker-construction bug in the tests themselves, caught by a
+      test failing for the wrong reason: a synthetic 1×1 "lamp" floor prop
+      — the smallest footprint available — anchored at a tiny candidate's
+      corner (the accent plant's is 0.26×0.26) overhangs by up to a full
+      unit and can clip a neighbouring piece's nearby candidate. Centering
+      the blocker on the target candidate instead still guarantees it
+      covers that candidate while halving the overhang in every direction.
+- [x] Re-verified in a real browser that Papermoth's untouched room still
+      renders pixel-identical to before this change.
+
+### Checks
+
+- [x] Unit tests: 85 total (5 net new), all passing.
+- [x] `tsc --noEmit` passes.
+- [x] `eslint .` passes, zero warnings (two `gridHeight`-unused warnings
+      surfaced by the front-candidate fix above were cleared by dropping
+      the now-unused parameter from `papermothWorkbenchLayouts` and
+      `papermothStorageLayouts`, rather than suppressed).
+- [x] `next build` passes.
+
+### Limitations
+
+- The three pieces' candidate lists were hand-authored and are verified
+  clear only against Papermoth's own actual demo props — there is only one
+  member using this component, so there's nothing else to check against.
+  Twice now, across two separate fix rounds, a candidate added "by formula"
+  without individually re-checking it against the real room turned out to
+  silently collide with one of Papermoth's own permanent props. Any future
+  change to Papermoth's demo prop list should re-run the "resolves all
+  three pieces to their original spots" test and the prop-overlap sweep
+  specifically, not trust the formulas on sight.
+- As with every pass since the extension became unavailable, visual
+  verification used headless Chrome driven directly over the DevTools
+  protocol, not the `claude-in-chrome` extension. This session also hit a
+  second, unrelated flake: the dev server's Jest/webpack worker crashed
+  outright twice before a screenshot would load — once from a stale
+  process still holding the port from an earlier run in this same session,
+  once with no obvious cause — and needed a plain kill-and-restart both
+  times. Noted in case it recurs; it did not reflect anything wrong in the
+  code being verified, and the same screenshot succeeded immediately after
+  each restart.
 
 ## Infrastructure
 

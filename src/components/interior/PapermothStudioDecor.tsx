@@ -1,6 +1,6 @@
 import { iso, seededRandom, shade } from "@/lib/iso";
 import { IsoBox } from "@/components/scene/IsoBox";
-import { findFreeLayout, papermothPlantLayouts, papermothStorageLayouts, papermothWorkbenchLayouts } from "@/lib/template-decor";
+import { resolvePapermothDecor } from "@/lib/template-decor";
 import type { Room } from "@/lib/types";
 interface PapermothStudioDecorProps {
     room: Pick<Room, "props" | "gridWidth" | "gridHeight">;
@@ -154,18 +154,19 @@ function AccentPlant({ u, v, scale }: {
  * workbench with proofs in progress, a flat-file of stored prints topped
  * with books, and an accent plant. Purely presentational: nothing here is
  * editable or persisted, so it has no effect on the override system or the
- * editor — but each of the three pieces is still recomputed from the room's
- * *current* `props` on every render via the same `findFreeLayout` geometry
- * `TemplateDecor` uses (see `lib/template-decor.ts`), so a prop the editor
- * moved or added onto this corner is never drawn over: the piece falls back
- * to an alternate spot, or renders nothing at all if every candidate
- * collides. The three pieces resolve independently of each other, so losing
- * one (say, the plant) doesn't take the other two down with it.
+ * editor — but the whole corner is still recomputed from the room's
+ * *current* `props` on every render via `resolvePapermothDecor`
+ * (`lib/template-decor.ts`), which resolves all three pieces together: a
+ * prop the editor moved or added onto this corner is never drawn over, and
+ * neither is a sibling piece — each piece's candidates are checked against
+ * every rect already accepted for an earlier piece in the same resolve, not
+ * just against room props, so two pieces reaching the same fallback spot
+ * can't land on top of each other. A piece with no free candidate left
+ * renders nothing rather than overlap; losing one (say, the plant) doesn't
+ * take the other two down with it.
  */
 export function PapermothStudioDecor({ room, scale }: PapermothStudioDecorProps) {
-    const workbench = findFreeLayout(room, papermothWorkbenchLayouts(room.gridWidth, room.gridHeight));
-    const storage = findFreeLayout(room, papermothStorageLayouts(room.gridWidth, room.gridHeight));
-    const plant = findFreeLayout(room, papermothPlantLayouts(room.gridWidth, room.gridHeight));
+    const { workbench, storage, plant } = resolvePapermothDecor(room);
     if (!workbench && !storage && !plant) return null;
     return (<g aria-hidden="true">
       {workbench ? <PrintWorkbench u={workbench[0]!.x} v={workbench[0]!.y} scale={scale}/> : null}
