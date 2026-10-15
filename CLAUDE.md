@@ -5,12 +5,42 @@
 `Neighborhood.tsx` owns camera/navigation state. `NeighborhoodArt.tsx` draws
 original SVG ground and buildings using the shared `iso()` projection.
 `lib/neighborhood.ts` maps stable building positions onto two rows without
-changing persisted models. The original Street renderer remains available.
-`Brand.tsx` provides the shared compact wordmark/navigation link.
-RoomScene retains individual editable props, content dialogs and local
-persistence; it adds a projected window, timber floor and HTML content
-buttons for small screens. The editor opens in the existing focus-trapping
-Dialog. The public visitor UI has no account or payment workflow.
+changing persisted models. `Brand.tsx` provides the shared compact
+wordmark/navigation link. RoomScene retains individual editable props,
+content dialogs and local persistence; it adds a projected window, timber
+floor and HTML content buttons for small screens. The editor opens in the
+existing focus-trapping Dialog. The public visitor UI has no account or
+payment workflow.
+
+## Phase 2A: visual completeness
+
+Every building now renders through `ExteriorFacade` (facade art per
+`ExteriorKind`), a kind-specific `Roofline`, a kind-specific `SignFixture`
+(hanging bracket vs. flush plaque) and a kind-specific `StreetDetail`
+(flower box, bistro set, sidewalk easel or placard post) — all in
+`NeighborhoodArt.tsx`. Height is drawn from a kind-appropriate range with a
+per-building `seededRandom` jitter, and body/trim colour come straight from
+the member's own `Building` fields — no more hardcoded palette cycling. The
+legacy single-row `Street`/`Building`/`StreetGround` renderer this
+superseded has been deleted; `ExteriorFacade.tsx` and `RoofGable.tsx` are the
+pieces of it that survived, now used by `NeighborhoodArt`.
+
+`TemplateDecor.tsx` holds fixed, non-persisted set dressing keyed only by
+`room.template` and `room.gridWidth`, so it applies to every member of a
+template uniformly: a ceiling light track and a print/work corner for
+gallery rooms (Papermoth keeps its own richer corner, `PapermothStudioDecor`,
+instead of the generic one), a tool pegboard and materials crate for studio
+rooms, and a counter plus packaging for shop rooms. Placements were checked
+against every current member's demo prop layout for their template and sit
+in the floor strip that layout leaves clear. `RoomProp.tsx`'s `enhanced` flag
+(renamed from the old Papermoth-only `richDecor`) now applies the
+larger-artwork, fuller-plant treatment to every gallery room, not one member.
+Contact shadows under floor props are no longer gated to one room either.
+
+Town ⇄ interior transitions are plain CSS mount-in animations (`stage-in` on
+the town page, `room-in` on a building page) plus a pressed-state scale on
+map buildings — no animation library, and all zeroed by the existing global
+`prefers-reduced-motion` rule.
 
 `SPEC.md` is the scope. `AGENTS.md` is the working agreement and the rules you
 must not break. This file is the technical shape of the project.

@@ -6,12 +6,13 @@ import type { Room, RoomProp as RoomPropModel } from "@/lib/types";
 import { RoomPropView } from "./RoomProp";
 import { ContentPanel } from "./ContentPanel";
 import { PapermothStudioDecor } from "./PapermothStudioDecor";
+import { GalleryLightTrack, GalleryWorkCorner, ShopCounter, ShopMerchandise, StudioWorkCorner } from "./TemplateDecor";
 import styles from "./RoomScene.module.css";
 const SCALE = 85;
 const WALL_HEIGHT = 2.1;
 const VIEW_WIDTH = 900;
 const VIEW_HEIGHT = 760;
-/** Members whose gallery template gets this milestone's richer treatment — see MILESTONE.md. Scoped by id so every other room renders exactly as before. */
+/** Papermoth Press keeps its own bespoke print-studio corner (workbench, flat-file storage, accent plant) instead of the generic one every other gallery room gets — see PapermothStudioDecor and TemplateDecor's GalleryWorkCorner. */
 const RICH_DECOR_MEMBER_ID = "papermoth-press";
 interface RoomSceneProps {
     room: Room;
@@ -32,7 +33,10 @@ function ContactShadow({ u, v, scale, rx, ry }: {
 export function RoomScene({ room, memberId }: RoomSceneProps) {
     const [openProp, setOpenProp] = useState<RoomPropModel | null>(null);
     const colors = faceColors(room.palette);
-    const richDecor = memberId === RICH_DECOR_MEMBER_ID && room.template === "gallery";
+    const isGallery = room.template === "gallery";
+    const isStudio = room.template === "studio";
+    const isShop = room.template === "shop";
+    const isPapermoth = memberId === RICH_DECOR_MEMBER_ID && isGallery;
     const sortedProps = useMemo(() => [...room.props].sort((a, b) => isoDepth(a.x, a.y, 0) - isoDepth(b.x, b.y, 0)), [room.props]);
     const floorPoints = [
         iso(0, 0, 0, SCALE),
@@ -85,18 +89,16 @@ export function RoomScene({ room, memberId }: RoomSceneProps) {
     const floorFace = faceMatrix(iso(0, 0, 0, SCALE), iso(room.gridWidth, 0, 0, SCALE), iso(0, room.gridHeight, 0, SCALE));
     // Contact shadows for every floor prop, sized off its registry footprint.
     // Drawn in one pass before any prop so a shadow can never paint over one.
-    const floorShadows = richDecor
-        ? room.props
-            .filter((prop) => PROP_REGISTRY[prop.kind].mount === "floor" && prop.kind !== "rug")
-            .map((prop) => {
-            const definition = PROP_REGISTRY[prop.kind];
-            const cx = prop.x + definition.footprint.w / 2;
-            const cy = prop.y + definition.footprint.h / 2;
-            const rx = definition.footprint.w * SCALE * 0.26;
-            const ry = rx * 0.4;
-            return { id: prop.id, cx, cy, rx, ry };
-        })
-        : [];
+    const floorShadows = room.props
+        .filter((prop) => PROP_REGISTRY[prop.kind].mount === "floor" && prop.kind !== "rug")
+        .map((prop) => {
+        const definition = PROP_REGISTRY[prop.kind];
+        const cx = prop.x + definition.footprint.w / 2;
+        const cy = prop.y + definition.footprint.h / 2;
+        const rx = definition.footprint.w * SCALE * 0.26;
+        const ry = rx * 0.4;
+        return { id: prop.id, cx, cy, rx, ry };
+    });
     return (<div className={styles.wrapper}>
       <svg className={styles.svg} viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}>
         <defs><pattern id="room-wood-planks" width=".16" height=".08" patternUnits="userSpaceOnUse"><rect width=".16" height=".08" fill="#d2b28c"/><path d="M0 0h.16M.08 0v.08" stroke="#a88964" strokeWidth=".0015" opacity=".45"/><path d="M.01 .024h.04M.1 .056h.03" stroke="#edcba3" strokeWidth=".0015"/></pattern></defs>
@@ -110,9 +112,12 @@ export function RoomScene({ room, memberId }: RoomSceneProps) {
           <polygon points={sideBasePoints} fill={shade(colors.right, -0.2)}/>
           <polygon points={backBasePoints} fill={shade(colors.left, -0.2)}/>
           <g transform={floorFace}><rect width="1" height="1" fill="url(#room-wood-planks)"/></g>
-          {richDecor ? <PapermothStudioDecor scale={SCALE}/> : null}
+          {isGallery ? <GalleryLightTrack gridWidth={room.gridWidth} scale={SCALE}/> : null}
+          {isPapermoth ? <PapermothStudioDecor scale={SCALE}/> : isGallery ? <GalleryWorkCorner gridWidth={room.gridWidth} scale={SCALE}/> : null}
+          {isStudio ? <StudioWorkCorner scale={SCALE}/> : null}
+          {isShop ? <><ShopCounter gridWidth={room.gridWidth} scale={SCALE}/><ShopMerchandise gridWidth={room.gridWidth} scale={SCALE}/></> : null}
           {floorShadows.map((shadow) => (<ContactShadow key={shadow.id} u={shadow.cx} v={shadow.cy} scale={SCALE} rx={shadow.rx} ry={shadow.ry}/>))}
-          {sortedProps.map((prop) => (<RoomPropView key={prop.id} prop={prop} scale={SCALE} onOpenContent={setOpenProp} richDecor={richDecor}/>))}
+          {sortedProps.map((prop) => (<RoomPropView key={prop.id} prop={prop} scale={SCALE} onOpenContent={setOpenProp} enhanced={isGallery}/>))}
         </g>
       </svg>
       <div className={styles.contents} aria-label="Room contents">{room.props.filter(prop => prop.content && PROP_REGISTRY[prop.kind].isDisplay).map(prop => <button key={prop.id} onClick={() => setOpenProp(prop)}><span>↗</span>{prop.content?.title || "Untitled work"}</button>)}</div>

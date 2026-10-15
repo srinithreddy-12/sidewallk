@@ -11,11 +11,11 @@ interface RoomPropViewProps {
     scale: number;
     onOpenContent: (prop: RoomPropModel) => void;
     /**
-     * Opt-in, per-room visual upgrade for this milestone's Papermoth refinement
-     * (larger artwork, a fuller plant) — gated by caller so every other
-     * member's room renders exactly as before. See RoomScene's `richDecor`.
+     * Gallery-template upgrade (larger statement-piece artwork, a fuller
+     * plant) — true for every gallery room, not just one member. See
+     * RoomScene's `isGallery`.
      */
-    richDecor?: boolean;
+    enhanced?: boolean;
 }
 function wallQuad(u0: number, u1: number, z0: number, z1: number, scale: number): string {
     const points = [iso(u0, 0, z1, scale), iso(u1, 0, z1, scale), iso(u1, 0, z0, scale), iso(u0, 0, z0, scale)];
@@ -71,7 +71,7 @@ function PictureLight({ uMid, z1, scale }: {
       <rect x={fixture.x - 9} y={fixture.y - 3} width={18} height={5} rx={2} fill="#2d2a26"/>
     </g>);
 }
-export function RoomPropView({ prop, scale, onOpenContent, richDecor = false }: RoomPropViewProps) {
+export function RoomPropView({ prop, scale, onOpenContent, enhanced = false }: RoomPropViewProps) {
     const [focused, setFocused] = useState(false);
     const definition = PROP_REGISTRY[prop.kind];
     const interactive = definition.isDisplay && Boolean(prop.content);
@@ -98,10 +98,10 @@ export function RoomPropView({ prop, scale, onOpenContent, richDecor = false }: 
         : {};
     const focusRing = focused ? (<circle cx={iso(prop.x + definition.footprint.w / 2, prop.y + definition.footprint.h / 2, 0.02, scale).x} cy={iso(prop.x + definition.footprint.w / 2, prop.y + definition.footprint.h / 2, 0.02, scale).y} r={10} fill="none" stroke="var(--color-focus)" strokeWidth={2.5}/>) : null;
     if (definition.mount === "wall") {
-        // Papermoth's gallery wall gives framed work real scale — a statement
-        // piece, not a postage stamp — while every other room keeps the
-        // original, more modest frame so nothing elsewhere shifts.
-        const enlargeArtwork = richDecor && prop.kind === "framed-work";
+        // Every gallery wall gives framed work real scale — a statement piece,
+        // not a postage stamp — while studio and shop rooms keep the original,
+        // more modest frame.
+        const enlargeArtwork = enhanced && prop.kind === "framed-work";
         const width = enlargeArtwork
             ? Math.min(definition.footprint.w * 0.94, definition.footprint.w) - 0.04
             : Math.min(definition.footprint.w * 0.78, definition.footprint.w) - 0.1;
@@ -167,23 +167,23 @@ export function RoomPropView({ prop, scale, onOpenContent, richDecor = false }: 
             const jitter = (i: number) => seededRandom(`${prop.id}:${i}`);
             const potTop = iso(u + w / 2, v + d / 2, 0.22, scale);
             const leafTones = ["#4d6b4a", "#5d7a52", "#3e5a3c"];
-            // Papermoth's plant reads as a fuller, more cared-for specimen: a
-            // two-tone pot and more, varied leaf clusters. Everywhere else keeps
-            // the original five-blob plant unchanged.
-            const leafCount = richDecor ? 9 : 5;
+            // Gallery plants read as a fuller, more cared-for specimen: a
+            // two-tone pot and more, varied leaf clusters. Studio and shop
+            // rooms keep the original, more modest five-blob plant.
+            const leafCount = enhanced ? 9 : 5;
             const leaves = Array.from({ length: leafCount }, (_, i) => {
                 const angle = (i / leafCount) * Math.PI * 2 + jitter(i) * 0.6;
-                const radius = (richDecor ? 8 : 10) + jitter(i + 5) * (richDecor ? 9 : 6);
+                const radius = (enhanced ? 8 : 10) + jitter(i + 5) * (enhanced ? 9 : 6);
                 return {
                     cx: potTop.x + Math.cos(angle) * radius,
-                    cy: potTop.y - (richDecor ? 17 : 14) - Math.abs(Math.sin(angle)) * (richDecor ? 17 : 14) - jitter(i + 10) * 6,
-                    r: (richDecor ? 8 : 9) + jitter(i + 1) * (richDecor ? 7 : 5),
+                    cy: potTop.y - (enhanced ? 17 : 14) - Math.abs(Math.sin(angle)) * (enhanced ? 17 : 14) - jitter(i + 10) * 6,
+                    r: (enhanced ? 8 : 9) + jitter(i + 1) * (enhanced ? 7 : 5),
                     tone: leafTones[i % leafTones.length]!,
                 };
             });
             return (<g {...interactionProps} className={interactive ? styles.interactive : undefined}>
           <IsoBox u={u + w * 0.22} v={v + d * 0.22} w={w * 0.56} d={d * 0.56} h={0.26} scale={scale} bodyColor="#8a6a52"/>
-          {richDecor ? (<IsoBox u={u + w * 0.22} v={v + d * 0.22} w={w * 0.56} d={d * 0.56} h={0.05} z0={0.26} scale={scale} bodyColor={shade("#8a6a52", 0.18)}/>) : null}
+          {enhanced ? (<IsoBox u={u + w * 0.22} v={v + d * 0.22} w={w * 0.56} d={d * 0.56} h={0.05} z0={0.26} scale={scale} bodyColor={shade("#8a6a52", 0.18)}/>) : null}
           {leaves.map((leaf, i) => (<ellipse key={i} cx={leaf.cx} cy={leaf.cy} rx={leaf.r} ry={leaf.r * 0.8} fill={leaf.tone} opacity={0.92}/>))}
           {focusRing}
         </g>);
