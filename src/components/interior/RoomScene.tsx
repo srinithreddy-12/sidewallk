@@ -6,7 +6,7 @@ import type { Room, RoomProp as RoomPropModel } from "@/lib/types";
 import { RoomPropView } from "./RoomProp";
 import { ContentPanel } from "./ContentPanel";
 import { PapermothStudioDecor } from "./PapermothStudioDecor";
-import { GalleryLightTrack, GalleryWorkCorner, ShopCounter, ShopMerchandise, StudioWorkCorner } from "./TemplateDecor";
+import { GalleryLightTrack, GalleryWorkCorner, ShopCounterDecor, StudioWorkCorner } from "./TemplateDecor";
 import styles from "./RoomScene.module.css";
 const SCALE = 85;
 const WALL_HEIGHT = 2.1;
@@ -113,9 +113,9 @@ export function RoomScene({ room, memberId }: RoomSceneProps) {
           <polygon points={backBasePoints} fill={shade(colors.left, -0.2)}/>
           <g transform={floorFace}><rect width="1" height="1" fill="url(#room-wood-planks)"/></g>
           {isGallery ? <GalleryLightTrack gridWidth={room.gridWidth} scale={SCALE}/> : null}
-          {isPapermoth ? <PapermothStudioDecor scale={SCALE}/> : isGallery ? <GalleryWorkCorner gridWidth={room.gridWidth} scale={SCALE}/> : null}
-          {isStudio ? <StudioWorkCorner scale={SCALE}/> : null}
-          {isShop ? <><ShopCounter gridWidth={room.gridWidth} scale={SCALE}/><ShopMerchandise gridWidth={room.gridWidth} scale={SCALE}/></> : null}
+          {isPapermoth ? <PapermothStudioDecor scale={SCALE}/> : isGallery ? <GalleryWorkCorner room={room} scale={SCALE}/> : null}
+          {isStudio ? <StudioWorkCorner room={room} scale={SCALE}/> : null}
+          {isShop ? <ShopCounterDecor room={room} scale={SCALE}/> : null}
           {floorShadows.map((shadow) => (<ContactShadow key={shadow.id} u={shadow.cx} v={shadow.cy} scale={SCALE} rx={shadow.rx} ry={shadow.ry}/>))}
           {sortedProps.map((prop) => (<RoomPropView key={prop.id} prop={prop} scale={SCALE} onOpenContent={setOpenProp} enhanced={isGallery}/>))}
         </g>

@@ -344,6 +344,141 @@ no workbench/storage/shadows.
   — those flows weren't touched by this work and were verified in the prior
   milestone, but that verification wasn't repeated here.
 
+## Phase 2A — visual completeness
+
+Builds on `e6384d4`, the first Phase 2A pass (wired real per-exterior-kind
+facades/rooflines into the live map renderer and added template-level
+interior decor — see `CLAUDE.md`'s "Phase 2A" note for the architecture).
+This entry covers the Codex-flagged follow-up fixes on top of that commit.
+Supersedes two standing limitations recorded above: Milestone 1's "building
+silhouettes share one box shape" (now one roofline per exterior kind) and
+the visual-redesign pass's "other seven buildings still use the original
+flat-box exterior" (now every building renders through `ExteriorFacade`).
+
+### Architectural subvariants per building
+
+- [x] Every building gets a deterministic 0/1 `variant` from
+      `facadeVariants()` (`lib/neighborhood.ts`), assigned by each member's
+      rank among others sharing its exterior kind in stable town order —
+      not a hashed coin flip, so two buildings of the same kind are
+      *guaranteed* to land on different variants rather than occasionally
+      colliding on the same look.
+- [x] For press-front, studio-front, cafe-front and gallery-front (each
+      already left-right asymmetric), variant 1 mirrors the whole facade
+      plus its awning, roof vent box, sign-bracket side and street-detail
+      position — a real geometric reflection, not a recolour.
+- [x] shop-front's default layout is left-right symmetric, so mirroring it
+      would be a visual no-op — it gets a second, hand-authored layout
+      instead: a single large bay/display window on one side with the door
+      and a narrow accent window grouped on the other, in place of the
+      default's twin flanking windows.
+- [x] Every building also gets a small, independent per-building roof-pitch
+      jitter (~±15% on rise/overhang, seeded off the member id) so even two
+      buildings sharing both kind and variant would still carry a slightly
+      different roofline.
+- [x] Verified in a real browser (desktop, via headless Chrome screenshots —
+      see Checks) at the town overview: Linden & Kiln vs. Needle & Groove
+      (studio-front) show a mirrored door/window side and a mirrored roof
+      vent box; Harbor Light Goods vs. Thistle & Thread (shop-front) show
+      genuinely different window/door massing, not a mirror of the same
+      shapes; Marrow Coffee Roastery vs. Salt City Letterpress (cafe-front)
+      show a mirrored door/porthole/window side and a mirrored bistro-table
+      position.
+- [x] Unit tests (`neighborhood.test.ts`): two buildings sharing a kind
+      always get different variants, checked against the real demo town's
+      actual duplicated kinds (not only a synthetic fixture); a kind that
+      appears once still gets a variant; assignment is stable across
+      repeated calls and depends on list order, not id or position hashing.
+
+### Collision-safe template decor
+
+- [x] Extracted the fixed gallery/studio/shop set dressing's placement into
+      pure, testable geometry (`lib/template-decor.ts`): `findFreeLayout`
+      for floor rects, `findFreeWallSpan` for wall spans. Both are
+      recomputed from the room's *current* `props` on every render, so an
+      edited room is never stale.
+- [x] Each decor piece tries a short, kind-appropriate list of fallback
+      spots (the original position, then 2–3 alternates) in priority order
+      and renders nothing at all if every candidate collides with an
+      existing floor or wall prop — decor never draws on top of an editable
+      prop.
+- [x] The gallery work corner and the studio crate/pegboard resolve
+      independently of each other (one can fall back or disappear without
+      taking the other down); the shop counter and its two packaging boxes
+      resolve as one composite unit, so they only ever appear together.
+- [x] Fixed a bug caught in review before it shipped: the shop packaging
+      boxes' resolved floor footprint (width × depth) was being overwritten
+      by the decor-only 3D stack height, which would have drawn each box
+      with the wrong depth. Separated the two numbers.
+- [x] Fixed a formula bug caught by the first test run: the generalized
+      studio pegboard span was centered on the room's true midpoint, which
+      overlaps the demo studio layout's first wall shelf; corrected it to
+      match the original, verified-safe gap just right of centre.
+- [x] Unit tests (`template-decor.test.ts`, 15 tests): pure geometry tests
+      for `findFreeLayout`/`findFreeWallSpan` (first-fit, fallback,
+      all-candidates-occupied → null, out-of-bounds candidates skipped,
+      composite layouts require every rect clear, wall props never block
+      floor decor and vice versa), plus scenarios run against the **real
+      demo town** through the **real** `moveProp`/`createProp` editor
+      functions: dragging an existing prop onto a decor piece's default
+      spot, and creating a brand-new prop and dragging it there. Confirmed
+      by temporarily logging actual results (not just asserting
+      non-equality) that these scenarios genuinely exercise both outcomes
+      the spec asked for — falling back to a different, verified
+      non-overlapping spot, and full omission when every candidate is
+      blocked — rather than passing vacuously.
+- [x] Re-verified in a real browser that the untouched demo rooms render
+      pixel-identical to before this refactor (Harbor Light Goods'
+      counter/merchandise, every gallery/studio room) — each pure
+      function's first candidate matches the previous hardcoded position
+      for every current member.
+
+### Checks
+
+- [x] Unit tests: 74 total (20 new — 5 in `neighborhood.test.ts`, 15 in
+      `template-decor.test.ts`), all passing.
+- [x] `tsc --noEmit` passes.
+- [x] `eslint .` passes, zero warnings.
+- [x] `next build` passes.
+- [x] Visual verification: the `claude-in-chrome` browser extension was not
+      connected in this session (as in the prior Phase 2A pass). Drove
+      headless Chrome directly instead, over the DevTools protocol:
+      `Page.captureScreenshot` with `Emulation.setDeviceMetricsOverride` for
+      accurate 1440×900 and 390×844 rendering, plus a scripted sweep using
+      `Runtime.evaluate` to measure `document.documentElement.scrollWidth`
+      against `window.innerWidth` and `getBoundingClientRect()` on every
+      `button`/`[role="button"]` element, across all 8 member pages at both
+      widths: zero horizontal overflow, zero sub-44px touch targets.
+
+### Limitations
+
+- shop-front's two variants are both hand-authored, not generated, so a
+  hypothetical third shop-front member would reuse one of the two existing
+  looks rather than getting something new — fine for the current 8-member
+  town, worth knowing before adding a 9th shop.
+- The per-building roof-pitch jitter (~±15%) is a subtle, side-by-side cue;
+  on its own it does not read as "a different roofline" the way the
+  variant mirroring or shop's alternate layout does — it's additive on top
+  of those, not a substitute for them.
+- gallery-front and press-front each have only one member in the current
+  demo town, so their mirror-variant code path has no second same-kind
+  building to visually compare against yet. Verified by inspecting the
+  mirrored geometry directly, and by the fact that studio/shop/cafe use the
+  identical mechanism — not by a second gallery/press building actually
+  existing.
+- TemplateDecor's fallback search tries a small, fixed list of candidate
+  spots (3–4 per piece), not an exhaustive scan of the grid; a room edited
+  into an unusual, heavily cluttered arrangement could end up with decor
+  omitted even though some other empty cell exists elsewhere in the room.
+  This matches the spec ("omit decor when no safe position exists") rather
+  than guaranteeing decor always finds the one remaining valid cell.
+- As with the prior Phase 2A pass, verification used headless Chrome driven
+  directly over the DevTools protocol, not the `claude-in-chrome` extension
+  (unavailable both sessions) — an actual interactive click-through of the
+  editor, live in a browser, dragging a prop onto a decor spot and watching
+  it fall back, was not additionally performed; that behavior is covered by
+  the unit tests against the real `room-edit.ts` functions instead.
+
 ## Infrastructure
 
 - `next dev` and `next build` now write to separate output directories

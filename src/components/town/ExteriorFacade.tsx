@@ -5,6 +5,14 @@ interface ExteriorFacadeProps {
   kind: ExteriorKind;
   bodyColor: string;
   trimColor: string;
+  /**
+   * A second, genuinely different facade for shop-front (its default layout
+   * is left-right symmetric, so the caller's horizontal-mirror trick that
+   * differentiates every other kind would be a visual no-op here). Every
+   * other kind ignores this prop — the caller mirrors their asymmetric
+   * default layout instead. See NeighborhoodArt's `facadeVariants`.
+   */
+  variant?: number;
 }
 
 /**
@@ -12,9 +20,30 @@ interface ExteriorFacadeProps {
  * fy 0..1 down, 0 at the roofline). The caller wraps this in a face matrix
  * transform — nothing here reasons about isometric space.
  */
-export function ExteriorFacade({ kind, bodyColor, trimColor }: ExteriorFacadeProps) {
+export function ExteriorFacade({ kind, bodyColor, trimColor, variant = 0 }: ExteriorFacadeProps) {
   const glass = shade(bodyColor, 0.5);
   const frame = shade(trimColor, -0.1);
+
+  if (kind === "shop-front" && variant === 1) {
+    // A corner-boutique read: one large display bay on the left, the door
+    // and a narrow accent window grouped on the right — distinct massing
+    // from the symmetric twin-window default below, not just a recolour.
+    const recess = shade(bodyColor, -0.3);
+    return (
+      <g>
+        <path d="M -0.02 0.1 L 0.46 -0.02 L 1.02 0.1 L 1.02 0.18 L -0.02 0.18 Z" fill={frame} />
+        <rect x={0.06} y={0.24} width={0.42} height={0.46} fill={frame} />
+        <rect x={0.09} y={0.28} width={0.36} height={0.38} fill={glass} />
+        <polygon points="0.12,0.31 0.2,0.31 0.13,0.6 0.1,0.6" fill={shade(glass, 0.3)} opacity={0.4} />
+        <rect x={0.58} y={0.18} width={0.17} height={0.58} fill={frame} />
+        <rect x={0.605} y={0.22} width={0.12} height={0.5} fill={recess} />
+        <circle cx={0.665} cy={0.48} r={0.012} fill={trimColor} />
+        <rect x={0.82} y={0.3} width={0.14} height={0.3} fill={frame} />
+        <rect x={0.84} y={0.33} width={0.1} height={0.24} fill={glass} />
+        <rect x={0.06} y={0.68} width={0.9} height={0.03} fill={shade(trimColor, -0.12)} />
+      </g>
+    );
+  }
 
   switch (kind) {
     case "gallery-front":

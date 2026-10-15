@@ -103,18 +103,21 @@ function PlacardPost({ u, v, scale }: { u: number; v: number; scale: number }) {
   </g>;
 }
 
-/** The kind-appropriate street-level prop standing just off the entrance. */
-function StreetDetail({ kind, u, v, w, d, scale, seed }: { kind: ExteriorKind; u: number; v: number; w: number; d: number; scale: number; seed: number }) {
+/** The kind-appropriate street-level prop standing just off the entrance. `mirror` flips which side of the entrance it stands on, to match the mirrored facade. */
+function StreetDetail({ kind, u, v, w, d, scale, seed, mirror }: { kind: ExteriorKind; u: number; v: number; w: number; d: number; scale: number; seed: number; mirror: boolean }) {
+  const frac = (f: number) => (mirror ? 1 - f : f);
   switch (kind) {
     case "press-front":
+      return <FlowerBox u={u + w * frac(0.08)} v={v + d} width={w * 0.38} scale={scale} seed={seed}/>;
     case "shop-front":
+      // Shop-fronts carry their own layout variant instead of a mirror, so the flower box stays put rather than flipping independently of the facade.
       return <FlowerBox u={u + w * 0.08} v={v + d} width={w * 0.38} scale={scale} seed={seed}/>;
     case "cafe-front":
-      return <BistroSet u={u + w * 0.74} v={v + d + .2} scale={scale}/>;
+      return <BistroSet u={u + w * frac(0.74)} v={v + d + .2} scale={scale}/>;
     case "studio-front":
-      return <SidewalkEasel u={u + w * 0.1} v={v + d + .14} scale={scale}/>;
+      return <SidewalkEasel u={u + w * frac(0.1)} v={v + d + .14} scale={scale}/>;
     case "gallery-front":
-      return <PlacardPost u={u + w * 0.78} v={v + d + .16} scale={scale}/>;
+      return <PlacardPost u={u + w * frac(0.78)} v={v + d + .16} scale={scale}/>;
     default:
       return null;
   }
@@ -135,46 +138,62 @@ function StripedAwning({ x0, x1, yTop, yBottom, trim, color }: { x0: number; x1:
   </g>;
 }
 
-/** Roofline and roofing material for a given exterior kind — distinct silhouette and colour per kind, so the skyline reads as a real block, not eight repeats of one box. */
-function Roofline({ kind, u, v, w, d, h, color, trim, scale }: { kind: ExteriorKind; u: number; v: number; w: number; d: number; h: number; color: string; trim: string; scale: number }) {
+/**
+ * Roofline and roofing material for a given exterior kind — distinct
+ * silhouette and colour per kind, so the skyline reads as a real block, not
+ * eight repeats of one box. `jitter` (a per-building seeded 0..1) scales the
+ * pitch/overhang by roughly ±15%, so even two buildings of the same kind and
+ * the same facade variant still carry a slightly different roofline.
+ * `mirror` flips the studio vent box to the other half of the ridge, to
+ * match the mirrored facade below it.
+ */
+function Roofline({ kind, u, v, w, d, h, color, trim, scale, jitter, mirror }: { kind: ExteriorKind; u: number; v: number; w: number; d: number; h: number; color: string; trim: string; scale: number; jitter: number; mirror: boolean }) {
+  const f = 0.85 + jitter * 0.3;
   switch (kind) {
     case "press-front":
-      return <RoofGable u={u - .08} v={v - .07} w={w + .16} d={d + .14} h={h} rise={.82} overhang={.22} scale={scale} roofColor="#9c4f3d"/>;
+      return <RoofGable u={u - .08} v={v - .07} w={w + .16} d={d + .14} h={h} rise={.82 * f} overhang={.22 * f} scale={scale} roofColor="#9c4f3d"/>;
     case "cafe-front":
-      return <RoofGable u={u - .08} v={v - .07} w={w + .16} d={d + .14} h={h} rise={.55} overhang={.34} scale={scale} roofColor="#3f6b5e"/>;
-    case "studio-front":
+      return <RoofGable u={u - .08} v={v - .07} w={w + .16} d={d + .14} h={h} rise={.55 * f} overhang={.34 * f} scale={scale} roofColor="#3f6b5e"/>;
+    case "studio-front": {
+      const ventBoxW = .22;
+      const ventOffset = mirror ? w * (1 - .58) - ventBoxW : w * .58;
       return <>
-        <RoofGable u={u - .06} v={v - .05} w={w + .12} d={d + .1} h={h} rise={.4} overhang={.08} scale={scale} roofColor="#5c5247"/>
-        <IsoBox u={u + w * .58} v={v + d * .36} w={.22} d={.22} h={.3} z0={h + .2} scale={scale} bodyColor="#8a8178"/>
+        <RoofGable u={u - .06} v={v - .05} w={w + .12} d={d + .1} h={h} rise={.4 * f} overhang={.08 * f} scale={scale} roofColor="#5c5247"/>
+        <IsoBox u={u + ventOffset} v={v + d * .36} w={ventBoxW} d={ventBoxW} h={.3} z0={h + .2} scale={scale} bodyColor="#8a8178"/>
       </>;
+    }
     case "shop-front":
       return <>
-        <IsoBox u={u - .09} v={v - .09} w={w + .18} d={d + .18} h={.15} z0={h} scale={scale} bodyColor={shade(color, -.1)}/>
-        <IsoBox u={u + .18} v={v + .18} w={w - .36} d={d - .36} h={.07} z0={h + .15} scale={scale} bodyColor={shade(color, .05)}/>
+        <IsoBox u={u - .09} v={v - .09} w={w + .18} d={d + .18} h={.15 * f} z0={h} scale={scale} bodyColor={shade(color, -.1)}/>
+        <IsoBox u={u + .18} v={v + .18} w={w - .36} d={d - .36} h={.07} z0={h + .15 * f} scale={scale} bodyColor={shade(color, .05)}/>
       </>;
     case "gallery-front":
-      return <IsoBox u={u - .05} v={v - .05} w={w + .1} d={d + .1} h={.1} z0={h} scale={scale} bodyColor={shade(trim, -.05)}/>;
+      return <IsoBox u={u - .05} v={v - .05} w={w + .1} d={d + .1} h={.1 * f} z0={h} scale={scale} bodyColor={shade(trim, -.05)}/>;
     default:
       return null;
   }
 }
 
-/** The shop's identifying sign: a flush facade plaque for retail/gallery fronts, a hanging bracket sign for the artisan/cafe fronts. */
-function SignFixture({ kind, u, v, w, d, h, trim, text, scale }: { kind: ExteriorKind; u: number; v: number; w: number; d: number; h: number; trim: string; text: string; scale: number }) {
+/** The shop's identifying sign: a flush facade plaque for retail/gallery fronts, a hanging bracket sign for the artisan/cafe fronts. `mirror` moves the bracket sign to the opposite side of the entrance, matching the mirrored facade. */
+function SignFixture({ kind, u, v, w, d, h, trim, text, scale, mirror }: { kind: ExteriorKind; u: number; v: number; w: number; d: number; h: number; trim: string; text: string; scale: number; mirror: boolean }) {
   if (kind === "shop-front" || kind === "gallery-front") {
     const p = iso(u + w / 2, v + d, h * 0.86, scale);
     return <g transform={`translate(${p.x} ${p.y})`} aria-hidden="true"><rect x={-54} y={-12} width={108} height={22} rx={4} fill={trim} stroke={shade(trim, -.22)}/><text x={0} y={4} textAnchor="middle" fontSize="11" fontWeight={800} fill={readableInk(trim)}>{text.toUpperCase()}</text></g>;
   }
-  const bracket = iso(u + w * 0.86, v + d, h, scale);
-  const sign = iso(u + w * 0.86, v + d, h * 0.82, scale);
+  const frac = mirror ? 0.14 : 0.86;
+  const bracket = iso(u + w * frac, v + d, h, scale);
+  const sign = iso(u + w * frac, v + d, h * 0.82, scale);
+  const nub = mirror ? 2 : -2;
   return <g aria-hidden="true">
-    <line x1={bracket.x} y1={bracket.y} x2={sign.x - 2} y2={sign.y - 9} stroke={shade(trim, -.3)} strokeWidth={2}/>
+    <line x1={bracket.x} y1={bracket.y} x2={sign.x + nub} y2={sign.y - 9} stroke={shade(trim, -.3)} strokeWidth={2}/>
     <g transform={`translate(${sign.x} ${sign.y})`}><rect x={-46} y={-11} width={92} height={20} rx={3} fill={trim} stroke={shade(trim, -.25)}/><text x={0} y={3} textAnchor="middle" fontSize="10" fontWeight={800} fill={readableInk(trim)}>{text.toUpperCase()}</text></g>
   </g>;
 }
 
-export function NeighborhoodBuilding({ member, onEnter, onSelect, selected }: {
+export function NeighborhoodBuilding({ member, variant, onEnter, onSelect, selected }: {
   member: Member;
+  /** 0 or 1, from `facadeVariants` — guarantees two buildings sharing an exterior kind don't share an architecture. */
+  variant: number;
   onEnter: () => void;
   onSelect: () => void;
   selected: boolean;
@@ -185,8 +204,13 @@ export function NeighborhoodBuilding({ member, onEnter, onSelect, selected }: {
   const trim = member.building.trimColor;
   const w = 2.85, d = 2.45;
   const seed = seededRandom(member.id);
+  const roofJitter = seededRandom(`${member.id}:roof`);
   const [hMin, hMax] = HEIGHT_RANGE[kind];
   const h = hMin + seed * (hMax - hMin);
+  // shop-front gets a genuinely different hand-authored layout per variant
+  // (its default is left-right symmetric, so mirroring it would be a no-op)
+  // — every other kind mirrors its already-asymmetric default facade.
+  const mirror = kind !== "shop-front" && variant === 1;
   const face = faceMatrix(iso(u, v + d, h, S), iso(u + w, v + d, h, S), iso(u, v + d, 0, S));
   const side = faceMatrix(iso(u + w, v + d, h, S), iso(u + w, v, h, S), iso(u + w, v + d, 0, S));
   const label = iso(u + w / 2, v + d + .5, 0, S);
@@ -196,12 +220,16 @@ export function NeighborhoodBuilding({ member, onEnter, onSelect, selected }: {
     <polygon points={points([[u + .3, v + .2, 0], [u + w + .75, v + .2, 0], [u + w + .75, v + d + .8, 0], [u + .3, v + d + .8, 0]])} fill="#355846" opacity=".15"/>
     <IsoBox u={u} v={v} w={w} d={d} h={h} scale={S} bodyColor={color}/>
     <g transform={side}><rect x="0" y=".92" width="1" height=".08" fill={shade(color, -.2)}/>{[.18, .57].map(x => <g key={x}><rect x={x} y=".18" width=".23" height=".3" fill={shade(color, -.25)}/><rect x={x + .025} y=".2" width=".18" height=".25" fill="#e7eee3"/><path d={`M${x + .115} .2v.25M${x + .025} .32h.18`} stroke={trim} strokeWidth=".017"/></g>)}</g>
-    <g transform={face}><ExteriorFacade kind={kind} bodyColor={color} trimColor={trim}/></g>
-    {kind === "shop-front" ? <g transform={face}><StripedAwning x0={.06} x1={.94} yTop={.07} yBottom={.21} trim={trim} color={color}/></g> : null}
-    {kind === "cafe-front" ? <g transform={face}><StripedAwning x0={.08} x1={.4} yTop={.1} yBottom={.24} trim={trim} color={color}/></g> : null}
-    <Roofline kind={kind} u={u} v={v} w={w} d={d} h={h} color={color} trim={trim} scale={S}/>
-    <SignFixture kind={kind} u={u} v={v} w={w} d={d} h={h} trim={trim} text={member.building.signText} scale={S}/>
-    <StreetDetail kind={kind} u={u} v={v} w={w} d={d} scale={S} seed={seed}/>
+    <g transform={face}>
+      <g transform={mirror ? "matrix(-1,0,0,1,1,0)" : undefined}>
+        <ExteriorFacade kind={kind} bodyColor={color} trimColor={trim} variant={variant}/>
+        {kind === "shop-front" ? <StripedAwning x0={.06} x1={.94} yTop={.07} yBottom={.21} trim={trim} color={color}/> : null}
+        {kind === "cafe-front" ? <StripedAwning x0={.08} x1={.4} yTop={.1} yBottom={.24} trim={trim} color={color}/> : null}
+      </g>
+    </g>
+    <Roofline kind={kind} u={u} v={v} w={w} d={d} h={h} color={color} trim={trim} scale={S} jitter={roofJitter} mirror={mirror}/>
+    <SignFixture kind={kind} u={u} v={v} w={w} d={d} h={h} trim={trim} text={member.building.signText} scale={S} mirror={mirror}/>
+    <StreetDetail kind={kind} u={u} v={v} w={w} d={d} scale={S} seed={seed} mirror={mirror}/>
     <g transform={`translate(${label.x} ${label.y + 10})`} className={styles.mapLabel}><rect x="-84" y="-14" width="168" height="30" rx="15" fill="#fafbf5" stroke="#b9cab8"/><text textAnchor="middle" y="5" fontSize="12" fontWeight="650" fill="#2e493d">{member.name}</text></g>
   </g>;
 }

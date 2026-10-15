@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Member } from "@/lib/types";
-import { plotScreen, WORLD_ORIGIN } from "@/lib/neighborhood";
+import { facadeVariants, plotScreen, WORLD_ORIGIN } from "@/lib/neighborhood";
 import { NeighborhoodBuilding, NeighborhoodGround } from "./NeighborhoodArt";
 import styles from "./Neighborhood.module.css";
 export function Neighborhood({ members, allMembers, selectedId, onSelect, onEnter }: {
@@ -23,6 +23,7 @@ export function Neighborhood({ members, allMembers, selectedId, onSelect, onEnte
     } | null>(null);
     const suppressClick = useRef(false);
     useEffect(() => { const mq = window.matchMedia("(max-width:760px)"); const update = () => setMobile(mq.matches); update(); mq.addEventListener("change", update); return () => mq.removeEventListener("change", update); }, []);
+    const variants = useMemo(() => facadeVariants(allMembers), [allMembers]);
     const results = members.map(m => m.id).join(",");
     useEffect(() => {
         if (members.length === 1 && members[0]) {
@@ -49,7 +50,7 @@ export function Neighborhood({ members, allMembers, selectedId, onSelect, onEnte
         suppressClick.current = false;
     } }}>
  <defs><pattern id="world-dot-grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".8" fill="#bfd0bc" opacity=".48"/></pattern></defs><rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#world-dot-grid)"/>
- <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.zoom})`}><g transform={`translate(${WORLD_ORIGIN.x} ${WORLD_ORIGIN.y})`}><NeighborhoodGround />{[...allMembers].sort((a, b) => plotScreen(a.building.position).y - plotScreen(b.building.position).y).map(member => { const visible = members.some(m => m.id === member.id); return <g key={member.id} opacity={visible ? 1 : .18} pointerEvents={visible ? "auto" : "none"} aria-hidden={!visible}>{visible ? <NeighborhoodBuilding member={member} selected={member.id === selectedId} onSelect={() => onSelect(member.id)} onEnter={() => onEnter(member.id)}/> : null}</g>; })}</g></g></svg>
+ <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.zoom})`}><g transform={`translate(${WORLD_ORIGIN.x} ${WORLD_ORIGIN.y})`}><NeighborhoodGround />{[...allMembers].sort((a, b) => plotScreen(a.building.position).y - plotScreen(b.building.position).y).map(member => { const visible = members.some(m => m.id === member.id); return <g key={member.id} opacity={visible ? 1 : .18} pointerEvents={visible ? "auto" : "none"} aria-hidden={!visible}>{visible ? <NeighborhoodBuilding member={member} variant={variants[member.id] ?? 0} selected={member.id === selectedId} onSelect={() => onSelect(member.id)} onEnter={() => onEnter(member.id)}/> : null}</g>; })}</g></g></svg>
  {members.length === 0 ? <p className={styles.empty}>No places match. Try another name or category.</p> : null}
  <div className={styles.controls} role="group" aria-label="Map controls"><button aria-label="Pan left" onClick={() => pan(60, 0)}>←</button><button aria-label="Pan right" onClick={() => pan(-60, 0)}>→</button><button aria-label="Pan up" onClick={() => pan(0, 60)}>↑</button><button aria-label="Pan down" onClick={() => pan(0, -60)}>↓</button><button aria-label="Zoom out" onClick={() => zoom(-.15)}>−</button><button aria-label="Zoom in" onClick={() => zoom(.15)}>+</button><button className={styles.reset} onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })}>Recenter</button></div>
  <div className={styles.legend}><span><i />A sample neighborhood</span><span>Drag to explore · select a building to enter</span></div></div>;
