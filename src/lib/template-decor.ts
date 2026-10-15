@@ -119,6 +119,48 @@ export function studioPegboardSpans(gridWidth: number): WallSpan[] {
   ];
 }
 
+/** Candidate spots for Papermoth's own print workbench: original back-right corner, then mirrored to back-left, then pushed toward the front at whichever side it landed. */
+export function papermothWorkbenchLayouts(gridWidth: number, gridHeight: number): GridRect[][] {
+  const w = 1.7;
+  const h = 1.0;
+  const backY = 0.35;
+  const margin = 0.15;
+  const frontY = Math.max(backY, gridHeight - h - 0.3);
+  return [
+    [{ x: gridWidth - w - margin, y: backY, w, h }],
+    [{ x: margin, y: backY, w, h }],
+    [{ x: gridWidth - w - margin, y: frontY, w, h }],
+  ];
+}
+
+/** Candidate spots for Papermoth's flat-file print storage: same priority order as the workbench, independent of whether the workbench itself found a spot. */
+export function papermothStorageLayouts(gridWidth: number, gridHeight: number): GridRect[][] {
+  const w = 1.15;
+  const h = 0.85;
+  const backY = 1.65;
+  const margin = 0.65;
+  const frontY = Math.max(backY, gridHeight - h - 0.3);
+  return [
+    [{ x: gridWidth - w - margin, y: backY, w, h }],
+    [{ x: margin, y: backY, w, h }],
+    [{ x: gridWidth - w - margin, y: frontY, w, h }],
+  ];
+}
+
+/** Candidate spots for Papermoth's accent plant, as a small rect around its centre point — same priority order as the other two pieces, resolved independently. */
+export function papermothPlantLayouts(gridWidth: number, gridHeight: number): GridRect[][] {
+  const w = 0.26;
+  const h = 0.26;
+  const backY = 2.22;
+  const margin = 0.17;
+  const frontY = Math.max(backY, gridHeight - h - 0.3);
+  return [
+    [{ x: gridWidth - w - margin, y: backY, w, h }],
+    [{ x: margin, y: backY, w, h }],
+    [{ x: gridWidth - w - margin, y: frontY, w, h }],
+  ];
+}
+
 /**
  * Candidate layouts for the shop counter plus its two packaging boxes,
  * tried as one composite unit so the pieces always land together: the

@@ -113,7 +113,7 @@ export function RoomScene({ room, memberId }: RoomSceneProps) {
           <polygon points={backBasePoints} fill={shade(colors.left, -0.2)}/>
           <g transform={floorFace}><rect width="1" height="1" fill="url(#room-wood-planks)"/></g>
           {isGallery ? <GalleryLightTrack gridWidth={room.gridWidth} scale={SCALE}/> : null}
-          {isPapermoth ? <PapermothStudioDecor scale={SCALE}/> : isGallery ? <GalleryWorkCorner room={room} scale={SCALE}/> : null}
+          {isPapermoth ? <PapermothStudioDecor room={room} scale={SCALE}/> : isGallery ? <GalleryWorkCorner room={room} scale={SCALE}/> : null}
           {isStudio ? <StudioWorkCorner room={room} scale={SCALE}/> : null}
           {isShop ? <ShopCounterDecor room={room} scale={SCALE}/> : null}
           {floorShadows.map((shadow) => (<ContactShadow key={shadow.id} u={shadow.cx} v={shadow.cy} scale={SCALE} rx={shadow.rx} ry={shadow.ry}/>))}

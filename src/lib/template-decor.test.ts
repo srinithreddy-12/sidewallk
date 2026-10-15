@@ -5,6 +5,9 @@ import {
   findFreeLayout,
   findFreeWallSpan,
   galleryWorkCornerLayouts,
+  papermothPlantLayouts,
+  papermothStorageLayouts,
+  papermothWorkbenchLayouts,
   shopCounterLayouts,
   studioCrateLayouts,
   studioPegboardSpans,
@@ -229,5 +232,126 @@ describe("decor placement against real demo rooms", () => {
       const rugRect = { x: movedRug.x, y: movedRug.y, w: 2, h: 2 };
       for (const rect of resolved) expect(overlaps(rect, rugRect)).toBe(false);
     }
+  });
+});
+
+describe("Papermoth print-studio corner placement", () => {
+  const papermoth = member("papermoth-press");
+
+  it("every piece finds its original spot in the untouched demo room", () => {
+    const { gridWidth, gridHeight } = papermoth.room;
+    expect(findFreeLayout(papermoth.room, papermothWorkbenchLayouts(gridWidth, gridHeight))).toEqual(
+      papermothWorkbenchLayouts(gridWidth, gridHeight)[0],
+    );
+    expect(findFreeLayout(papermoth.room, papermothStorageLayouts(gridWidth, gridHeight))).toEqual(
+      papermothStorageLayouts(gridWidth, gridHeight)[0],
+    );
+    expect(findFreeLayout(papermoth.room, papermothPlantLayouts(gridWidth, gridHeight))).toEqual(
+      papermothPlantLayouts(gridWidth, gridHeight)[0],
+    );
+  });
+
+  it("falls back to a different spot after dragging a prop onto the workbench's default footprint", () => {
+    const layouts = papermothWorkbenchLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const defaultSpot = layouts[0]!;
+    const target = defaultSpot[0]!;
+    const lamp = papermoth.room.props.find((p) => p.id === "papermoth-lamp");
+    if (!lamp) throw new Error("fixture prop papermoth-lamp missing");
+
+    const movedProps = moveProp(
+      papermoth.room.props,
+      "papermoth-lamp",
+      target.x - lamp.x,
+      target.y - lamp.y,
+      papermoth.room.gridWidth,
+      papermoth.room.gridHeight,
+    );
+    const room = { ...papermoth.room, props: movedProps };
+    const resolved = findFreeLayout(room, layouts);
+
+    expect(resolved).not.toEqual(defaultSpot);
+    if (resolved) {
+      const movedLamp = movedProps.find((p) => p.id === "papermoth-lamp")!;
+      const lampRect = { x: movedLamp.x, y: movedLamp.y, w: 1, h: 1 };
+      for (const rect of resolved) expect(overlaps(rect, lampRect)).toBe(false);
+    }
+  });
+
+  it("falls back for the storage unit when a newly added prop is dragged onto its default footprint", () => {
+    const layouts = papermothStorageLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const defaultSpot = layouts[0]!;
+    const target = defaultSpot[0]!;
+
+    const added = createProp(papermoth.room, "plant", "test-member");
+    const placed = moveProp(
+      [...papermoth.room.props, added],
+      added.id,
+      target.x - added.x,
+      target.y - added.y,
+      papermoth.room.gridWidth,
+      papermoth.room.gridHeight,
+    );
+    const room = { ...papermoth.room, props: placed };
+    const resolved = findFreeLayout(room, layouts);
+
+    expect(resolved).not.toEqual(defaultSpot);
+    if (resolved) {
+      const newProp = placed.find((p) => p.id === added.id)!;
+      const rect = { x: newProp.x, y: newProp.y, w: 1, h: 1 };
+      for (const r of resolved) expect(overlaps(r, rect)).toBe(false);
+    }
+  });
+
+  it("falls back for the accent plant after dragging a prop onto its default spot", () => {
+    const layouts = papermothPlantLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const defaultSpot = layouts[0]!;
+    const target = defaultSpot[0]!;
+    const plant = papermoth.room.props.find((p) => p.id === "papermoth-plant");
+    if (!plant) throw new Error("fixture prop papermoth-plant missing");
+
+    const movedProps = moveProp(
+      papermoth.room.props,
+      "papermoth-plant",
+      target.x - plant.x,
+      target.y - plant.y,
+      papermoth.room.gridWidth,
+      papermoth.room.gridHeight,
+    );
+    const room = { ...papermoth.room, props: movedProps };
+    const resolved = findFreeLayout(room, layouts);
+
+    expect(resolved).not.toEqual(defaultSpot);
+    if (resolved) {
+      const movedPlant = movedProps.find((p) => p.id === "papermoth-plant")!;
+      const plantRect = { x: movedPlant.x, y: movedPlant.y, w: 1, h: 1 };
+      for (const r of resolved) expect(overlaps(r, plantRect)).toBe(false);
+    }
+  });
+
+  it("omits the workbench entirely once every one of its candidate spots is blocked", () => {
+    const layouts = papermothWorkbenchLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const props = [
+      ...papermoth.room.props,
+      ...layouts.map((layout, i) => ({ id: `blocker-${i}`, kind: "bench" as const, x: layout[0]!.x, y: layout[0]!.y, tone: "#000" })),
+    ];
+    const room = { ...papermoth.room, props };
+    expect(findFreeLayout(room, layouts)).toBeNull();
+  });
+
+  it("resolves the three pieces independently — blocking the workbench alone doesn't take down the storage or the plant", () => {
+    const workbenchLayouts = papermothWorkbenchLayouts(papermoth.room.gridWidth, papermoth.room.gridHeight);
+    const props = [
+      ...papermoth.room.props,
+      ...workbenchLayouts.map((layout, i) => ({ id: `blocker-${i}`, kind: "bench" as const, x: layout[0]!.x, y: layout[0]!.y, tone: "#000" })),
+    ];
+    const room = { ...papermoth.room, props };
+
+    expect(findFreeLayout(room, workbenchLayouts)).toBeNull();
+    expect(findFreeLayout(room, papermothStorageLayouts(room.gridWidth, room.gridHeight))).toEqual(
+      papermothStorageLayouts(room.gridWidth, room.gridHeight)[0],
+    );
+    expect(findFreeLayout(room, papermothPlantLayouts(room.gridWidth, room.gridHeight))).toEqual(
+      papermothPlantLayouts(room.gridWidth, room.gridHeight)[0],
+    );
   });
 });

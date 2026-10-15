@@ -1,6 +1,9 @@
 import { iso, seededRandom, shade } from "@/lib/iso";
 import { IsoBox } from "@/components/scene/IsoBox";
+import { findFreeLayout, papermothPlantLayouts, papermothStorageLayouts, papermothWorkbenchLayouts } from "@/lib/template-decor";
+import type { Room } from "@/lib/types";
 interface PapermothStudioDecorProps {
+    room: Pick<Room, "props" | "gridWidth" | "gridHeight">;
     scale: number;
 }
 const WORKBENCH_TONE = "#8a6349";
@@ -150,13 +153,23 @@ function AccentPlant({ u, v, scale }: {
  * corner into a working print studio beneath the third gallery frame — a
  * workbench with proofs in progress, a flat-file of stored prints topped
  * with books, and an accent plant. Purely presentational: nothing here is
- * editable or persisted, so it has no effect on the override system, the
- * editor, or any other member's room.
+ * editable or persisted, so it has no effect on the override system or the
+ * editor — but each of the three pieces is still recomputed from the room's
+ * *current* `props` on every render via the same `findFreeLayout` geometry
+ * `TemplateDecor` uses (see `lib/template-decor.ts`), so a prop the editor
+ * moved or added onto this corner is never drawn over: the piece falls back
+ * to an alternate spot, or renders nothing at all if every candidate
+ * collides. The three pieces resolve independently of each other, so losing
+ * one (say, the plant) doesn't take the other two down with it.
  */
-export function PapermothStudioDecor({ scale }: PapermothStudioDecorProps) {
+export function PapermothStudioDecor({ room, scale }: PapermothStudioDecorProps) {
+    const workbench = findFreeLayout(room, papermothWorkbenchLayouts(room.gridWidth, room.gridHeight));
+    const storage = findFreeLayout(room, papermothStorageLayouts(room.gridWidth, room.gridHeight));
+    const plant = findFreeLayout(room, papermothPlantLayouts(room.gridWidth, room.gridHeight));
+    if (!workbench && !storage && !plant) return null;
     return (<g aria-hidden="true">
-      <PrintWorkbench u={4.15} v={0.35} scale={scale}/>
-      <PrintStorage u={4.2} v={1.65} scale={scale}/>
-      <AccentPlant u={5.7} v={2.35} scale={scale}/>
+      {workbench ? <PrintWorkbench u={workbench[0]!.x} v={workbench[0]!.y} scale={scale}/> : null}
+      {storage ? <PrintStorage u={storage[0]!.x} v={storage[0]!.y} scale={scale}/> : null}
+      {plant ? <AccentPlant u={plant[0]!.x + plant[0]!.w / 2} v={plant[0]!.y + plant[0]!.h / 2} scale={scale}/> : null}
     </g>);
 }

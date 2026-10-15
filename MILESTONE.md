@@ -333,12 +333,16 @@ no workbench/storage/shadows.
   `http://192.168.1.44:3000` (the dev server's printed LAN address — confirm
   it's still current in the terminal running `next dev`, as it can change
   with the host's network).
-- The print-studio corner's "intentional arrangement" is eyeballed for this
-  one 6×5 room; it was checked for footprint overlaps by hand (grid math),
-  not by an automated collision check, so a future edit to Papermoth's prop
-  positions via the editor could visually collide with the fixed decor
-  without the editor knowing (the decor isn't registry-aware, by design,
-  since it isn't an editable prop).
+- ~~The print-studio corner's "intentional arrangement" is eyeballed for
+  this one 6×5 room; it was checked for footprint overlaps by hand (grid
+  math), not by an automated collision check, so a future edit to
+  Papermoth's prop positions via the editor could visually collide with the
+  fixed decor without the editor knowing (the decor isn't registry-aware,
+  by design, since it isn't an editable prop).~~ **Resolved** — see "Fix
+  Codex finding: Papermoth decor collision safety" below; `PapermothStudioDecor`
+  now resolves its workbench, storage and accent plant against the room's
+  live props through the same `findFreeLayout` geometry every other
+  template decor piece uses.
 - Reset-to-demo-data and prop add/move/remove were not re-exercised end to
   end this session (only editor *open* and the colour swatch were checked)
   — those flows weren't touched by this work and were verified in the prior
@@ -433,6 +437,13 @@ flat-box exterior" (now every building renders through `ExteriorFacade`).
       function's first candidate matches the previous hardcoded position
       for every current member.
 
+Scope note: this pass covered the generic `GalleryWorkCorner`,
+`StudioWorkCorner` and `ShopCounterDecor` pieces in `TemplateDecor.tsx`.
+Papermoth Press renders through its own separate `PapermothStudioDecor`
+component instead (see `isPapermoth` in `RoomScene.tsx`), which was **not**
+yet collision-safe at the end of this pass — a gap Codex caught and that is
+fixed in "Fix Codex finding: Papermoth decor collision safety" below.
+
 ### Checks
 
 - [x] Unit tests: 74 total (20 new — 5 in `neighborhood.test.ts`, 15 in
@@ -478,6 +489,84 @@ flat-box exterior" (now every building renders through `ExteriorFacade`).
   editor, live in a browser, dragging a prop onto a decor spot and watching
   it fall back, was not additionally performed; that behavior is covered by
   the unit tests against the real `room-edit.ts` functions instead.
+
+## Fix Codex finding: Papermoth decor collision safety
+
+Builds on `be8d0c6`. Closes the one gap the previous Phase 2A follow-up pass
+left open on purpose (see the scope note above): `PapermothStudioDecor` —
+Papermoth Press's bespoke print-studio corner (workbench, flat-file storage,
+accent plant) — still used fixed coordinates checked by hand against the
+demo data, bypassing the `findFreeLayout` collision system every other
+template decor piece now goes through.
+
+- [x] Added three candidate-layout functions to `lib/template-decor.ts`
+      (`papermothWorkbenchLayouts`, `papermothStorageLayouts`,
+      `papermothPlantLayouts`), reusing the existing `findFreeLayout` pure
+      function rather than writing new collision logic — each piece's first
+      candidate is derived to exactly reproduce its previous hardcoded
+      position, confirmed by the regression test below rather than by eye.
+- [x] `PapermothStudioDecor` now takes the room (not just `scale`), resolves
+      each of its three pieces independently through `findFreeLayout`, and
+      renders only the pieces that found a clear spot — losing one (say,
+      the plant) doesn't take the other two down with it, matching
+      `StudioWorkCorner`'s existing pegboard/crate precedent rather than
+      `ShopCounterDecor`'s composite-unit one, since Papermoth's three
+      pieces are looser-coupled than a counter and its own packaging.
+      `RoomScene.tsx`'s call site updated to pass `room`.
+- [x] Each piece gets the same three-candidate fallback shape as the rest of
+      `TemplateDecor`: original spot, mirrored to the opposite wall side,
+      then pushed toward the front — on whichever side it landed.
+- [x] Unit tests (`template-decor.test.ts`, 6 new, 21 in the file total):
+      every piece resolves to its original spot in the untouched Papermoth
+      room; dragging the existing lamp onto the workbench's default
+      footprint forces a fallback; creating a brand-new prop and dragging it
+      onto the storage unit's default footprint forces a fallback; dragging
+      the existing plant onto the accent plant's own default footprint
+      forces a fallback; blocking all three of the workbench's candidates
+      omits it entirely; blocking only the workbench doesn't disturb the
+      storage or plant resolving normally (independence). As with the prior
+      round, confirmed by temporarily logging actual resolved values (not
+      only asserting non-equality) that the fallback assertions hit a real
+      non-null, non-overlapping alternate and not a vacuous `null`.
+- [x] Re-verified in a real browser that Papermoth's untouched room renders
+      pixel-identical to before this change (workbench, storage, book
+      stacks, accent plant all in their original positions) — confirms the
+      derived candidate formulas actually reproduce the old hardcoded
+      numbers rather than merely being close.
+- [x] Corrected every now-stale collision-safety claim this fix touches:
+      struck through and annotated the "print-studio corner ... eyeballed
+      ... not by an automated collision check" limitation under "Visual
+      quality pass 2" (now resolved), and added the scope note above the
+      Checks section of "Phase 2A — visual completeness" clarifying that
+      pass's `findFreeLayout` work did not yet cover Papermoth's own decor
+      component.
+
+### Checks
+
+- [x] Unit tests: 80 total (6 new), all passing.
+- [x] `tsc --noEmit` passes.
+- [x] `eslint .` passes, zero warnings.
+- [x] `next build` passes.
+
+### Limitations
+
+- Papermoth's three pieces resolve independently (like `StudioWorkCorner`),
+  not as a composite (like `ShopCounterDecor`) — so it's possible, in an
+  edited room, for the workbench to land at its mirrored back-left spot
+  while the storage unit stays at its original back-right spot, losing the
+  two pieces' visual adjacency even though neither is drawn over an
+  editable prop. Collision safety was the explicit ask here; preserving
+  exact visual coupling under arbitrary edits was not, and would need a
+  composite candidate list (workbench + storage + plant tried together) to
+  fix, at the cost of all three disappearing together whenever any one of
+  them can't find a spot.
+- As with every pass since the extension became unavailable, visual
+  verification used headless Chrome driven directly over the DevTools
+  protocol, not the `claude-in-chrome` extension — an actual interactive
+  click-through of the editor, live in a browser, dragging a prop onto one
+  of Papermoth's decor spots and watching it fall back, was not performed;
+  that behavior is covered by the unit tests against the real
+  `room-edit.ts` functions instead.
 
 ## Infrastructure
 
