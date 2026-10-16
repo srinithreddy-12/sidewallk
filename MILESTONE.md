@@ -705,6 +705,37 @@ on other machines.
   verifying it was still fully interactive (not just returning HTTP 200)
   immediately after.
 
+## Phase 2B foundation — private alpha
+
+- [x] Added stable town slugs and explicit draft/published state to the domain
+      model while keeping the existing sample town published and offline.
+- [x] Added town-scoped organizer/member/visitor authorization rules. The 7 new
+      tests cover public access, draft privacy, organizer-only actions, member
+      ownership, inactive invitations and mismatched identities/towns.
+- [x] Authored the first Postgres migration for towns, members and memberships,
+      including grants and row-level-security policies. Security-definer helper
+      functions avoid recursive membership-policy evaluation.
+- [x] Upgraded the runtime/tooling baseline to Next.js 16.4.2, React 19.3.1,
+      Vitest 5.0.5 and Vite 8.3.4. Production dependencies now report zero
+      known vulnerabilities via `npm audit --omit=dev`.
+- [x] Migrated ESLint and Vitest configuration to their current flat/Oxc
+      formats. The stricter React lint rules surfaced and removed a derived-map
+      camera effect; filter recentering is now derived without an extra render.
+- [x] Re-ran 92 unit/component tests, TypeScript, ESLint and the Next.js 16
+      production build. Repeated the complete Chrome sweep at 1440×900 and
+      390×844 across all eight rooms; all interactions, 44 px targets,
+      overflow checks and browser-console checks passed.
+
+### Phase 2B boundary
+
+- The SQL migration is authored but not applied or exercised against a live
+  Postgres/Supabase instance because this repository has no project credentials.
+- Authentication, server data access, uploads, invitations and management UI
+  are the next slices; the existing editor still uses labelled local demo data.
+- Full dependency audit still reports 5 high-severity findings in development
+  lint tooling through `eslint-config-next`/`fast-glob`. The production audit is
+  clean, and npm currently offers no non-breaking patched development tree.
+
 ## Future phases
 
 Explicitly out of scope for this milestone:

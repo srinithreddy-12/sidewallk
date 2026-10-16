@@ -24,8 +24,11 @@ export function TownProvider({ children }: { children: ReactNode }) {
   const [saveStatus, setSaveStatus] = useState<StorageStatus | null>(null);
 
   useEffect(() => {
-    setOverrides(loadOverrides());
-    setHydrated(true);
+    const storedOverrides = loadOverrides();
+    queueMicrotask(() => {
+      setOverrides(storedOverrides);
+      setHydrated(true);
+    });
   }, []);
 
   const updateMember = useCallback(

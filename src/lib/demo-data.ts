@@ -657,7 +657,9 @@ const saltCityLetterpress: Member = {
 
 export const DEMO_TOWN: Town = {
   id: "sidewallk-demo-town",
+  slug: "creative-quarter",
   name: "Sidewallk Sample Street",
+  publicationStatus: "published",
   members: [
     papermoth,
     lindenAndKiln,

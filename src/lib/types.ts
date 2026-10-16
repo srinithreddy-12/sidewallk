@@ -4,6 +4,8 @@ export type ExteriorKind = "gallery-front" | "studio-front" | "shop-front" | "ca
 
 export type InteriorTemplate = "gallery" | "studio" | "shop";
 
+export type PublicationStatus = "draft" | "published";
+
 export type RoomPropKind =
   | "framed-work"
   | "pedestal"
@@ -82,7 +84,10 @@ export interface Member {
 
 export interface Town {
   id: string;
+  /** Stable public URL segment. */
+  slug: string;
   name: string;
+  publicationStatus: PublicationStatus;
   members: Member[];
 }
 

@@ -1,5 +1,23 @@
 # Architecture and conventions
 
+## Phase 2B: private-alpha foundation
+
+`PHASE2B.md` defines the next product slice. `Town` now carries a stable slug
+and `draft`/`published` state. `lib/access.ts` is the shared optimistic
+permission model for organizer, member and visitor behavior. It is suitable for
+showing or hiding controls, but it is not the security boundary: authenticated
+server data access must repeat the check, and the policies in
+`supabase/migrations/202610170001_phase2b_core.sql` enforce it at the database.
+
+Production roles are town-scoped. A member role is tied to one member building;
+organizers control town-wide actions. Invitations are not active access. Keep
+auth provider code and database clients out of scene, room and reusable UI
+components.
+
+The project is on Next.js 16, React 19 and Vitest 5. Next 16 already isolates
+development and production output, so the earlier custom `distDir` split is no
+longer needed. Vitest uses Vite 8's Oxc JSX transform in `vitest.config.mts`.
+
 ## Visual reset
 
 `Neighborhood.tsx` owns camera/navigation state. `NeighborhoodArt.tsx` draws
