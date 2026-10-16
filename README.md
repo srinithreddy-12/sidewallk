@@ -1,5 +1,16 @@
 # Sidewallk
 
+## Phase 2B foundation — 17 October 2026
+
+The first private-alpha slice is in progress. The repository now defines
+draft/published towns, town-scoped organizer/member permissions, and the
+Postgres row-level-security schema that will enforce them. The current sample
+experience still runs entirely offline; no Supabase project or credentials are
+required yet. See `PHASE2B.md` for the sequence and acceptance checks.
+
+The project requires Node.js 20.9 or newer. It currently uses Next.js 16 and
+React 19.
+
 ## Visual reset — 15 October 2026
 
 The visual redesign builds on committed source `bbaf9fc` and retains the
@@ -53,9 +64,9 @@ the milestone independently from the same starting point.
 
 | Path | Branch | Purpose |
 | --- | --- | --- |
-| `sidewallk/` | `main` | Shared history. Docs only. |
+| `sidewallk/` | `main` | Shared, published branch. |
 | `sidewallk-claude/` | `claude` | Claude Code's attempt. |
-| `sidewallk-codex/` | `codex` | Codex's attempt. |
+| `sidewallk-codex/` | `codex/*` | Codex review and feature branches. |
 
 Each worktree installs its own `node_modules`.
 
@@ -67,6 +78,7 @@ Each worktree installs its own `node_modules`.
 | `CLAUDE.md` | Architecture and development conventions. |
 | `AGENTS.md` | Working agreement every coding agent must follow. |
 | `MILESTONE.md` | Checklist of completed work and known limitations. |
+| `PHASE2B.md` | Private-alpha roles, build sequence and acceptance checks. |
 
 ## What's here
 
