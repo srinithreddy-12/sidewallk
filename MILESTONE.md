@@ -721,17 +721,26 @@ on other machines.
 - [x] Migrated ESLint and Vitest configuration to their current flat/Oxc
       formats. The stricter React lint rules surfaced and removed a derived-map
       camera effect; filter recentering is now derived without an extra render.
-- [x] Re-ran 92 unit/component tests, TypeScript, ESLint and the Next.js 16
+- [x] Re-ran 104 unit/component tests, TypeScript, ESLint and the Next.js 16
       production build. Repeated the complete Chrome sweep at 1440×900 and
       390×844 across all eight rooms; all interactions, 44 px targets,
       overflow checks and browser-console checks passed.
+- [x] Added a credential-optional Supabase SSR boundary: browser/server clients,
+      Next.js 16 session-refresh proxy using verified claims, email magic-link
+      action, callback exchange with open-redirect protection, and a responsive
+      private-alpha sign-in page. With no keys, it shows an honest unavailable
+      state while the sample town remains fully usable.
 
 ### Phase 2B boundary
 
 - The SQL migration is authored but not applied or exercised against a live
   Postgres/Supabase instance because this repository has no project credentials.
 - Authentication, server data access, uploads, invitations and management UI
-  are the next slices; the existing editor still uses labelled local demo data.
+  beyond the sign-in/session boundary, plus uploads, invitations and management
+  UI, are the next slices; the existing editor still uses labelled local data.
+- Real email delivery, callback exchange and cookie refresh have not been run:
+  they require a Supabase project URL and publishable key. Only the deliberately
+  disconnected auth state has been exercised in a browser.
 - Full dependency audit still reports 5 high-severity findings in development
   lint tooling through `eslint-config-next`/`fast-glob`. The production audit is
   clean, and npm currently offers no non-breaking patched development tree.
