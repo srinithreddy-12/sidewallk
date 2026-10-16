@@ -47,6 +47,10 @@ npm run dev
 
 Then open **http://localhost:3000**.
 
+The sample town needs no environment variables. To connect private-alpha
+sign-in later, copy `.env.example` to `.env.local` and fill in the Supabase
+project URL, publishable key and public site URL. Never commit `.env.local`.
+
 Other scripts:
 
 ```bash

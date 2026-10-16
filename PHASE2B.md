@@ -29,9 +29,10 @@ and Postgres row-level security are the enforcement boundaries.
 1. **Foundation (this slice):** current supported Next.js/test tooling,
    draft/published town metadata, pure permission rules with exhaustive tests,
    and a reviewed Postgres/RLS migration.
-2. **Authentication:** Supabase email magic-link sign-in, cookie-based SSR
-   sessions, and a server-only data access layer. No role is trusted from the
-   browser or from user-editable metadata.
+2. **Authentication (code complete, live verification pending):** Supabase
+   email magic-link sign-in, cookie-based SSR sessions, and a server-only
+   verified-claims boundary. No role is trusted from the browser or from
+   user-editable metadata.
 3. **Town persistence:** repository adapter for towns, members and memberships;
    migrate the editor from local overrides to authenticated server mutations
    with optimistic concurrency.
@@ -82,4 +83,7 @@ before the core organizer/member publishing loop has evidence of demand.
 
 The migration in `supabase/migrations/202610170001_phase2b_core.sql` is authored
 but has not been applied because no Supabase project or credentials are present.
-No cloud resources, accounts or paid services were created by this slice.
+The sign-in, callback, cookie-refresh proxy and verified-claims code compile and
+the disconnected sign-in state is browser-tested, but a real magic link and
+session cannot be verified until those credentials exist. No cloud resources,
+accounts or paid services were created by this slice.
