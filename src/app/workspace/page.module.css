@@ -1,0 +1,133 @@
+.page {
+  min-height: 100dvh;
+  background: var(--color-sky);
+}
+
+.nav {
+  height: 76px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-paper);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--color-ink-soft);
+}
+
+.signOut {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 48px;
+  padding: 48px 40px 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.column h1,
+.column h2 {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  color: var(--color-ink);
+  margin: 0 0 20px;
+}
+
+.column h2 {
+  font-size: 18px;
+}
+
+.empty,
+.error {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-ink-soft);
+  background: var(--color-paper);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.error {
+  border-style: solid;
+  color: #9a3b2d;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.townCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 16px 20px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--color-ink);
+}
+
+.townCard strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.role {
+  display: block;
+  font-size: 11px;
+  color: var(--color-ink-soft);
+  margin-top: 2px;
+}
+
+.status {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .nav {
+    padding: 0 20px;
+    height: 66px;
+  }
+  .shell {
+    padding: 28px 20px 60px;
+  }
+  .identity span {
+    display: none;
+  }
+}

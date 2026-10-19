@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Brand } from "@/components/ui/Brand";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
+import { safeAuthNextPath } from "@/lib/auth-redirect";
 import { requestMagicLink } from "./actions";
 import styles from "./page.module.css";
 
@@ -12,10 +13,15 @@ const messages: Record<string, string> = {
   "callback-failed": "That sign-in link is invalid or expired. Request a new one.",
 };
 
-export default async function SignInPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  const { status } = await searchParams;
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; next?: string }>;
+}) {
+  const { status, next } = await searchParams;
   const configured = getSupabasePublicConfig() !== null;
   const message = status ? messages[status] : undefined;
+  const safeNext = safeAuthNextPath(next ?? null);
 
   return <main id="main-content" className={styles.page}>
     <header className={styles.nav}><Brand /><Link className={styles.back} href="/">← Back to the neighborhood</Link></header>
@@ -26,6 +32,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <p className={styles.intro}>Organizers manage the whole town. Members edit only their own building. Visitors keep exploring published streets without signing in.</p>
         {message ? <p className={styles.notice} role="status">{message}</p> : null}
         {configured ? <form className={styles.form} action={requestMagicLink}>
+          <input type="hidden" name="next" value={safeNext} />
           <label htmlFor="sign-in-email">Email address</label>
           <input id="sign-in-email" name="email" type="email" autoComplete="email" required />
           <button className="button button--primary" type="submit">Email me a sign-in link</button>
