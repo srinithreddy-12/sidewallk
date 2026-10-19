@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { createSupabaseServerClient } from "../supabase/server";
 import { convertPublicMemberRow, convertTownRow, type PublicMember, type TownWithSlugMembers } from "./convert";
 import type { MemberRow, TownRow } from "./rows";
@@ -12,8 +13,11 @@ import type { MemberRow, TownRow } from "./rows";
  * reach this through the anon role; row-level security (`towns_read_...`,
  * `members_read_...`) is the real boundary, this function does not add its
  * own bypassable check on top of it.
+ *
+ * Wrapped in `cache()` so `generateMetadata` and the page component both
+ * calling it for the same slug in one request only hits the database once.
  */
-export async function getPublishedTownBySlug(slug: string): Promise<TownWithSlugMembers | null> {
+export const getPublishedTownBySlug = cache(async (slug: string): Promise<TownWithSlugMembers | null> => {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
@@ -39,7 +43,7 @@ export async function getPublishedTownBySlug(slug: string): Promise<TownWithSlug
     .filter((member): member is PublicMember => member !== null);
 
   return convertTownRow(townRow as TownRow, members);
-}
+});
 
 export function findPublicMemberBySlug(town: TownWithSlugMembers, memberSlug: string): PublicMember | null {
   return town.members.find((member) => member.slug === memberSlug) ?? null;

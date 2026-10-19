@@ -190,13 +190,15 @@ function SignFixture({ kind, u, v, w, d, h, trim, text, scale, mirror }: { kind:
   </g>;
 }
 
-export function NeighborhoodBuilding({ member, variant, onEnter, onSelect, selected }: {
+export function NeighborhoodBuilding({ member, variant, onEnter, onSelect, selected, sampleLabels = true }: {
   member: Member;
   /** 0 or 1, from `facadeVariants` — guarantees two buildings sharing an exterior kind don't share an architecture. */
   variant: number;
   onEnter: () => void;
   onSelect: () => void;
   selected: boolean;
+  /** Only the local sample town is sample content — a real organizer's published building must never say so. */
+  sampleLabels?: boolean;
 }) {
   const { u, v } = plotFor(member.building.position);
   const kind = member.building.exterior;
@@ -214,8 +216,9 @@ export function NeighborhoodBuilding({ member, variant, onEnter, onSelect, selec
   const face = faceMatrix(iso(u, v + d, h, S), iso(u + w, v + d, h, S), iso(u, v + d, 0, S));
   const side = faceMatrix(iso(u + w, v + d, h, S), iso(u + w, v, h, S), iso(u + w, v + d, 0, S));
   const label = iso(u + w / 2, v + d + .5, 0, S);
-  return <g className={`${styles.building} ${selected ? styles.selected : ""}`} role="button" tabIndex={0} aria-label={`Enter ${member.name}, sample ${member.category} member`} onClick={onEnter} onMouseEnter={onSelect} onFocus={onSelect} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEnter(); } }}>
-    <title>{`${member.name} · sample member · click to enter`}</title>
+  const descriptor = sampleLabels ? `sample ${member.category} member` : member.category;
+  return <g className={`${styles.building} ${selected ? styles.selected : ""}`} role="button" tabIndex={0} aria-label={`Enter ${member.name}, ${descriptor}`} onClick={onEnter} onMouseEnter={onSelect} onFocus={onSelect} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEnter(); } }}>
+    <title>{sampleLabels ? `${member.name} · sample member · click to enter` : `${member.name} · click to enter`}</title>
     <polygon className={styles.plotRing} points={points([[u - .25, v - .25, 0], [u + w + .25, v - .25, 0], [u + w + .25, v + d + .5, 0], [u - .25, v + d + .5, 0]])}/>
     <polygon points={points([[u + .3, v + .2, 0], [u + w + .75, v + .2, 0], [u + w + .75, v + d + .8, 0], [u + .3, v + d + .8, 0]])} fill="#355846" opacity=".15"/>
     <IsoBox u={u} v={v} w={w} d={d} h={h} scale={S} bodyColor={color}/>
