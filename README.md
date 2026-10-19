@@ -47,9 +47,15 @@ npm run dev
 
 Then open **http://localhost:3000**.
 
-The sample town needs no environment variables. To connect private-alpha
-sign-in later, copy `.env.example` to `.env.local` and fill in the Supabase
-project URL, publishable key and public site URL. Never commit `.env.local`.
+The sample town needs no environment variables. Private-alpha sign-in uses
+Supabase when `.env.local` contains the project URL, publishable key and public
+site URL from `.env.example`. The local file is ignored by Git and must never
+be committed.
+
+The Supabase CLI is installed as a development dependency. The hosted schema is
+versioned in `supabase/migrations/`; use `npx supabase migration list` to compare
+local and remote versions and `npx supabase db push --dry-run` before applying a
+new migration.
 
 Other scripts:
 
@@ -98,8 +104,9 @@ Each worktree installs its own `node_modules`.
   Every change previews immediately and is saved to `localStorage` under
   `sidewallk.town.v1`; "Reset to demo data" discards it.
 
-Everything runs from typed local data. No accounts, no paid services, no API
-keys, no network calls at runtime.
+The public sample still runs entirely from typed local data. The optional
+private-alpha sign-in route uses the configured Supabase project; room editing
+and visitor content remain local in this phase.
 
 ## A note on the demo content
 
