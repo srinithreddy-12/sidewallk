@@ -730,17 +730,23 @@ on other machines.
       action, callback exchange with open-redirect protection, and a responsive
       private-alpha sign-in page. With no keys, it shows an honest unavailable
       state while the sample town remains fully usable.
+- [x] Connected the Sidewallk Supabase project, initialized the CLI configuration,
+      linked the correct project reference, applied the Phase 2B migration and
+      confirmed the local and remote migration versions match. An anonymous
+      Data API request to `towns` returns `200` with an empty, RLS-filtered list.
+- [x] Rebuilt with the local Supabase environment and repeated the full
+      production browser sweep at 1440×900 and 390×844. The configured email
+      form renders at both sizes; the visitor, room, editor and accessibility
+      flows continue to pass.
 
 ### Phase 2B boundary
 
-- The SQL migration is authored but not applied or exercised against a live
-  Postgres/Supabase instance because this repository has no project credentials.
 - Authentication, server data access, uploads, invitations and management UI
-  beyond the sign-in/session boundary, plus uploads, invitations and management
-  UI, are the next slices; the existing editor still uses labelled local data.
-- Real email delivery, callback exchange and cookie refresh have not been run:
-  they require a Supabase project URL and publishable key. Only the deliberately
-  disconnected auth state has been exercised in a browser.
+  beyond the sign-in/session boundary are the next slices; the existing editor
+  still uses labelled local data.
+- Real email delivery, callback exchange and cookie refresh have not been run
+  because no test email was supplied. The configured sign-in form and hosted
+  Auth settings endpoint have been exercised, but no message was sent.
 - Full dependency audit still reports 5 high-severity findings in development
   lint tooling through `eslint-config-next`/`fast-glob`. The production audit is
   clean, and npm currently offers no non-breaking patched development tree.
