@@ -1,47 +1,73 @@
 "use client";
 
-import { useTown } from "@/lib/store";
 import { createProp, moveProp, removeProp, updatePropContent } from "@/lib/room-edit";
-import type { InteriorTemplate, Member, MemberCategory, RoomPropKind } from "@/lib/types";
+import type { InteriorTemplate, Member, MemberCategory, MemberOverride, RoomPropKind } from "@/lib/types";
 import { MemberFieldsEditor } from "./MemberFieldsEditor";
 import { RoomAppearanceEditor } from "./RoomAppearanceEditor";
 import { PropsEditor } from "./PropsEditor";
 import styles from "./EditorPanel.module.css";
 
+export interface EditorSaveStatus {
+  ok: boolean;
+  reason?: string;
+}
+
 interface EditorPanelProps {
   member: Member;
   onClose: () => void;
+  /** Applies one patch — to local-storage overrides in the demo, to a Supabase update in production. */
+  onPatch: (patch: MemberOverride) => void;
+  saveStatus: EditorSaveStatus | null;
+  /** Omitted entirely (not shown) when there is nothing meaningful to reset to — production members have no demo fallback. */
+  onReset?: () => void;
+  resettable?: boolean;
+  /** The "local demo editor" badge and copy only apply to the one local sample town. */
+  sampleMode?: boolean;
 }
 
-export function EditorPanel({ member, onClose }: EditorPanelProps) {
-  const { overrides, saveStatus, updateMember, resetMember } = useTown();
-  const hasOverride = member.id in overrides;
-
+/**
+ * Pure, reusable room/member editor — the same one the local sample editor
+ * and the production organizer/member workspace editor both render. Holds
+ * no opinion on how `onPatch` actually persists; see LocalEditorPanel for
+ * the local-storage-backed demo wiring and WorkspaceMemberEditor for the
+ * Supabase-backed production wiring.
+ */
+export function EditorPanel({
+  member,
+  onClose,
+  onPatch,
+  saveStatus,
+  onReset,
+  resettable = false,
+  sampleMode = true,
+}: EditorPanelProps) {
   return (
     <section className={styles.panel} aria-label={`Edit ${member.name}`}>
       <div className={styles.header}>
         <div className={styles.titleRow}>
           <h2>Edit this room</h2>
-          <span className="sample-badge">Local demo editor</span>
+          {sampleMode ? <span className="sample-badge">Local demo editor</span> : null}
         </div>
         <button type="button" className="button button--small" onClick={onClose}>
           Done editing
         </button>
       </div>
-      <p className="field__hint">
-        Changes save to this browser only, under your own control — nothing here represents real authorization.
-      </p>
+      {sampleMode ? (
+        <p className="field__hint">
+          Changes save to this browser only, under your own control — nothing here represents real authorization.
+        </p>
+      ) : null}
 
       <details className={styles.section} open>
         <summary>Member details</summary>
         <div className={styles.sectionBody}>
           <MemberFieldsEditor
             member={member}
-            onChangeName={(value) => updateMember(member.id, { name: value })}
-            onChangeDescription={(value) => updateMember(member.id, { description: value })}
-            onChangeCategory={(value: MemberCategory) => updateMember(member.id, { category: value })}
-            onChangeActionLabel={(value) => updateMember(member.id, { action: { ...member.action, label: value } })}
-            onChangeActionUrl={(value) => updateMember(member.id, { action: { ...member.action, url: value } })}
+            onChangeName={(value) => onPatch({ name: value })}
+            onChangeDescription={(value) => onPatch({ description: value })}
+            onChangeCategory={(value: MemberCategory) => onPatch({ category: value })}
+            onChangeActionLabel={(value) => onPatch({ action: { ...member.action, label: value } })}
+            onChangeActionUrl={(value) => onPatch({ action: { ...member.action, url: value } })}
           />
         </div>
       </details>
@@ -51,8 +77,8 @@ export function EditorPanel({ member, onClose }: EditorPanelProps) {
         <div className={styles.sectionBody}>
           <RoomAppearanceEditor
             room={member.room}
-            onChangeTemplate={(value: InteriorTemplate) => updateMember(member.id, { room: { template: value } })}
-            onChangePalette={(value) => updateMember(member.id, { room: { palette: value } })}
+            onChangeTemplate={(value: InteriorTemplate) => onPatch({ room: { template: value } })}
+            onChangePalette={(value) => onPatch({ room: { palette: value } })}
           />
         </div>
       </details>
@@ -63,18 +89,16 @@ export function EditorPanel({ member, onClose }: EditorPanelProps) {
           <PropsEditor
             room={member.room}
             onMoveProp={(propId, dx, dy) =>
-              updateMember(member.id, {
+              onPatch({
                 room: { props: moveProp(member.room.props, propId, dx, dy, member.room.gridWidth, member.room.gridHeight) },
               })
             }
-            onRemoveProp={(propId) =>
-              updateMember(member.id, { room: { props: removeProp(member.room.props, propId) } })
-            }
+            onRemoveProp={(propId) => onPatch({ room: { props: removeProp(member.room.props, propId) } })}
             onUpdatePropContent={(propId, fields) =>
-              updateMember(member.id, { room: { props: updatePropContent(member.room.props, propId, fields) } })
+              onPatch({ room: { props: updatePropContent(member.room.props, propId, fields) } })
             }
             onAddProp={(kind: RoomPropKind) =>
-              updateMember(member.id, { room: { props: [...member.room.props, createProp(member.room, kind, member.id)] } })
+              onPatch({ room: { props: [...member.room.props, createProp(member.room, kind, member.id)] } })
             }
           />
         </div>
@@ -82,11 +106,17 @@ export function EditorPanel({ member, onClose }: EditorPanelProps) {
 
       <div className={styles.footer}>
         <span className={`${styles.status} ${saveStatus?.ok === false ? styles.statusError : ""}`} role="status">
-          {saveStatus?.ok === false ? saveStatus.reason : "Changes preview immediately and are saved automatically."}
+          {saveStatus?.ok === false
+            ? saveStatus.reason
+            : sampleMode
+              ? "Changes preview immediately and are saved automatically."
+              : "Changes save automatically."}
         </span>
-        <button type="button" className="button" onClick={() => resetMember(member.id)} disabled={!hasOverride}>
-          Reset to demo data
-        </button>
+        {onReset ? (
+          <button type="button" className="button" onClick={onReset} disabled={!resettable}>
+            Reset to demo data
+          </button>
+        ) : null}
       </div>
     </section>
   );

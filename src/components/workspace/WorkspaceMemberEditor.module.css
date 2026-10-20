@@ -1,0 +1,26 @@
+.conflict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fbe9e4;
+  border: 1px solid #edc9bd;
+  color: #9a3b2d;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.conflict button {
+  min-height: 44px;
+  border: 1px solid #c9826f;
+  background: transparent;
+  color: #9a3b2d;
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}

@@ -87,15 +87,21 @@ export function convertMemberRow(row: MemberRow): Member | null {
   };
 }
 
-/** A member row plus its public slug — the repository's own wrapper, kept out of the shared `Member` type since demo members have no slug. */
+/**
+ * A member row plus its public slug and row version — kept out of the
+ * shared `Member` type since demo members have neither. The version travels
+ * with every member the workspace reads so its editor can send it back as
+ * the expected version on the next optimistic-concurrency update.
+ */
 export interface PublicMember extends Member {
   slug: string;
+  version: number;
 }
 
 export function convertPublicMemberRow(row: MemberRow): PublicMember | null {
   const member = convertMemberRow(row);
   if (!member || !isNonEmptyString(row.slug)) return null;
-  return { ...member, slug: row.slug };
+  return { ...member, slug: row.slug, version: row.version };
 }
 
 export interface TownWithSlugMembers extends Town {

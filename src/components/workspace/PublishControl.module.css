@@ -1,0 +1,27 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.status {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-ink-soft);
+}
+
+.statusPublished {
+  color: var(--color-accent);
+}
+
+.message {
+  font-size: 12px;
+  margin: 0;
+  color: #9a3b2d;
+}
+
+.wrap button {
+  min-height: 44px;
+}

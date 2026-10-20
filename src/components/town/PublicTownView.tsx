@@ -22,10 +22,23 @@ const categories: { value: MemberCategory | "all"; label: string }[] = [
 /**
  * The published-town equivalent of the sample HomePage — same map/list/
  * search experience, driven by a server-fetched town instead of the local
- * override store, and routing into `/t/[townSlug]/b/[memberSlug]` instead of
- * the sample `/b/[memberId]` route.
+ * override store. Routes into `/t/[townSlug]/b/[memberSlug]` by default;
+ * the authenticated workspace draft preview passes `getMemberHref` to route
+ * into its own member editor instead.
  */
-export function PublicTownView({ town }: { town: TownWithSlugMembers }) {
+export function PublicTownView({
+  town,
+  getMemberHref,
+  homeHref,
+  draftBanner,
+}: {
+  town: TownWithSlugMembers;
+  getMemberHref?: (member: PublicMember) => string;
+  /** Where the brand logo links back to. Defaults to the town's public page. */
+  homeHref?: string;
+  /** Shown by the workspace draft preview so it never reads as the live public page. */
+  draftBanner?: boolean;
+}) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<MemberCategory | "all">("all");
@@ -38,14 +51,30 @@ export function PublicTownView({ town }: { town: TownWithSlugMembers }) {
   );
   const selected = members.find((m) => m.id === selectedId) ?? members[0];
 
-  const slugFor = (memberId: string): string =>
-    town.members.find((m: PublicMember) => m.id === memberId)?.slug ?? memberId;
-  const enter = (memberId: string) => router.push(`/t/${town.slug}/b/${slugFor(memberId)}`);
+  const hrefFor = (memberId: string): string => {
+    const member = town.members.find((m: PublicMember) => m.id === memberId);
+    if (!member) return `/t/${town.slug}`;
+    return getMemberHref ? getMemberHref(member) : `/t/${town.slug}/b/${member.slug}`;
+  };
+  const enter = (memberId: string) => router.push(hrefFor(memberId));
 
   return (
     <main id="main-content" className={styles.page}>
+      {draftBanner ? (
+        <div role="status" style={{
+          background: "var(--color-accent)",
+          color: "var(--color-accent-ink)",
+          textAlign: "center",
+          fontSize: 12,
+          fontWeight: 650,
+          padding: "8px 16px",
+          minHeight: 36,
+        }}>
+          Draft preview — visitors can&apos;t see this until the town is published.
+        </div>
+      ) : null}
       <header className={styles.nav}>
-        <Brand href={`/t/${town.slug}`} />
+        <Brand href={homeHref ?? `/t/${town.slug}`} />
         <div className={styles.navCenter}>
           <span className={styles.townDot} />
           <span>{town.name}</span>

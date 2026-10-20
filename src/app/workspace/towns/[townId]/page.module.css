@@ -1,0 +1,146 @@
+.page {
+  min-height: 100dvh;
+  background: var(--color-sky);
+}
+
+.nav {
+  height: 76px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-paper);
+}
+
+.breadcrumb {
+  text-decoration: none;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.breadcrumb span {
+  color: var(--color-border);
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navActions a {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 40px 80px;
+  display: grid;
+  gap: 40px;
+}
+
+.section {
+  background: var(--color-paper);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+}
+
+.section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 18px;
+  color: var(--color-ink);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 12px 18px;
+  background: var(--color-paper-dim);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.memberRow strong {
+  font-size: 14px;
+}
+
+.memberCategory {
+  font-size: 11px;
+  color: var(--color-ink-soft);
+  margin-left: 8px;
+}
+
+.memberActions {
+  display: flex;
+  gap: 8px;
+}
+
+.memberActions a {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+
+@media (max-width: 760px) {
+  .nav {
+    padding: 0 20px;
+    height: 66px;
+  }
+  .shell {
+    padding: 28px 20px 60px;
+  }
+  .section {
+    padding: 20px;
+  }
+  .memberRow {
+    flex-wrap: wrap;
+  }
+}

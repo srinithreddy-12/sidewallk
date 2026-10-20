@@ -24,7 +24,7 @@ export default async function SignInPage({
   const safeNext = safeAuthNextPath(next ?? null);
 
   return <main id="main-content" className={styles.page}>
-    <header className={styles.nav}><Brand /><Link className={styles.back} href="/">← Back to the neighborhood</Link></header>
+    <header className={styles.nav}><Brand /><Link className={styles.back} href="/">← <span className={styles.backLabel}>Back to the neighborhood</span></Link></header>
     <section className={styles.shell} aria-labelledby="sign-in-title">
       <div className={styles.panel}>
         <p className={styles.eyebrow}>Sidewallk private alpha</p>

@@ -23,6 +23,7 @@ describe("findPublicMemberBySlug", () => {
       {
         id: "member-1",
         slug: "papermoth-press",
+        version: 1,
         name: "Papermoth Press",
         category: "art",
         tagline: "",
