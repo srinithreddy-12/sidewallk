@@ -1,12 +1,15 @@
 # Sidewallk
 
-## Phase 2B foundation — 17 October 2026
+## Phase 2B — 20 October 2026
 
-The first private-alpha slice is in progress. The repository now defines
-draft/published towns, town-scoped organizer/member permissions, and the
-Postgres row-level-security schema that will enforce them. The current sample
-experience still runs entirely offline; no Supabase project or credentials are
-required yet. See `PHASE2B.md` for the sequence and acceptance checks.
+The private-alpha organizer loop is built: sign in, create a draft town, add
+and edit member buildings through the same room editor the local demo uses,
+preview the draft, publish it to a public `/t/[townSlug]` URL, unpublish it,
+and invite a collaborator with a single-use copyable link. The sample
+experience at `/` still runs entirely offline — no Supabase project or
+credentials are required for it. See `PHASE2B.md` for the full build sequence
+and what remains unverified (real magic-link email delivery requires a human
+to click it; see that file for exactly what was and wasn't exercised).
 
 The project requires Node.js 20.9 or newer. It currently uses Next.js 16 and
 React 19.
@@ -104,9 +107,32 @@ Each worktree installs its own `node_modules`.
   Every change previews immediately and is saved to `localStorage` under
   `sidewallk.town.v1`; "Reset to demo data" discards it.
 
-The public sample still runs entirely from typed local data. The optional
-private-alpha sign-in route uses the configured Supabase project; room editing
-and visitor content remain local in this phase.
+The public sample still runs entirely from typed local data.
+
+When `.env.local` is configured, the private-alpha product routes become
+functional against the linked Supabase project:
+
+- **Sign in** (`/sign-in`) — email magic link; returns to wherever `?next=`
+  pointed (or `/workspace`).
+- **Workspace** (`/workspace`) — towns where you have an *active* membership
+  (an unaccepted invitation doesn't count), with a form to start a new draft
+  town.
+- **Town management** (`/workspace/towns/[townId]`) — organizer-only name
+  editing, publish/unpublish, member list, add-member, and invite-by-email
+  with a copyable one-time link. A member sees only their own assigned
+  building here.
+- **Member editor** (`/workspace/towns/[townId]/members/[memberId]`) — the
+  same room editor as the local demo (`EditorPanel`), now saving to Postgres
+  with optimistic-concurrency conflict detection instead of `localStorage`.
+- **Draft preview** (`/workspace/towns/[townId]/preview`) — the draft town
+  through the exact same street/interior renderer a visitor will see once
+  published, with a banner making clear it isn't live yet.
+- **Public town** (`/t/[townSlug]`, `/t/[townSlug]/b/[memberSlug]`) —
+  published towns only, no sign-in required. A draft, missing or invalid slug
+  all resolve to the same not-found page.
+- **Accept an invitation** (`/invite/[token]`) — requires sign-in; a single
+  explicit "Accept" action, no auto-accept and no preview of the invitation's
+  contents beforehand.
 
 ## A note on the demo content
 

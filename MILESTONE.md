@@ -751,11 +751,224 @@ on other machines.
   lint tooling through `eslint-config-next`/`fast-glob`. The production audit is
   clean, and npm currently offers no non-breaking patched development tree.
 
+## Phase 2B: data access, public route, workspace, invitations
+
+Builds on the "Phase 2B foundation" slice above — the `access.ts` permission
+model and the core `towns`/`members`/`town_memberships` migration it
+describes were already in place. This pass wires them to real data access,
+production routes and a working organizer/member loop.
+
+### Data access boundary
+
+- [x] `lib/repository/convert.ts`: pure converters from raw Postgres rows to
+      the existing `Town`/`Member`/`Building`/`Room` types. A structurally
+      invalid building/room/category drops that member (never crashes
+      rendering); a bad sub-field (colour, sign text) falls back to a safe
+      default and keeps the rest, matching the exact rule `storage.ts`
+      already used for local-storage overrides — the two paths now share
+      their field validators via `lib/validation.ts` instead of each
+      defining their own copy.
+- [x] `lib/repository/public.ts` (unauthenticated-safe published-town reads,
+      wrapped in React's `cache()`) and `lib/repository/workspace.ts`
+      (server-only authenticated reads/writes) kept as separate modules so a
+      public page can never accidentally import an authenticated query path.
+- [x] Every production mutation in `workspace.ts` takes an `expectedVersion`
+      and returns a distinct `{reason:"conflict"}` result instead of
+      overwriting a newer row — the one explicit persistence adapter asked
+      for, rather than Supabase calls scattered through components.
+- [x] 23 new unit tests (127 total): row-to-domain conversion, malformed
+      JSON at every level (non-object, wrong enum, missing fields), dropped
+      vs. fallback-repaired fields, unsafe action URLs rejected to an inert
+      link, and the repository's own Supabase-not-configured fallback
+      (mocking `createSupabaseServerClient` to resolve `null`).
+- [x] `tsc --noEmit`, `eslint .`, `vitest run` and `next build` all pass.
+
+### Public `/t/[townSlug]` route
+
+- [x] Reuses `Neighborhood`/`ListView`/`RoomScene` directly (via a new
+      `PublicTownView` component) — no forked renderer. `/t/[townSlug]/
+      b/[memberSlug]` gives each member a stable public URL.
+- [x] A missing, draft or broken town all resolve to the same `not-found.tsx`
+      card via `next/navigation`'s `notFound()` — the public route cannot
+      reveal whether a protected draft exists behind a given slug.
+- [x] Added an opt-in `sampleLabels`/`sampleBadge` prop (default `true`,
+      preserving the demo's existing copy) to `Neighborhood`,
+      `NeighborhoodBuilding` and `ListView`, since those components
+      previously hardcoded "sample member" wording that a real organizer's
+      published content must never pick up.
+- [x] Verified with headless Chrome driven over raw CDP (not the
+      `--screenshot` flag — see Checks below for why that mattered) at
+      1440×900 and 390×844: the sample homepage is unaffected, `/t/does-
+      not-exist` renders the not-found card, zero console errors.
+
+### Authenticated workspace
+
+- [x] `/workspace`: towns with an *active* membership only (an invitation
+      alone does not count — matches the existing `access.ts` rule), role
+      and publication state per town, a working sign-out Server Action, and
+      a draft-town creation form using `useActionState` so a duplicate-slug
+      error redisplays with the typed name/slug intact.
+- [x] The magic-link sign-in flow now carries a `next` path end to end: a
+      hidden form field → `emailRedirectTo` query param →
+      `/auth/callback`'s existing `safeAuthNextPath` handling, so a user who
+      hit `/workspace` signed out lands back in the workspace after signing
+      in rather than the homepage.
+- [x] `/workspace/towns/[townId]`: organizer name editing, publish/
+      unpublish, member list, add-member (reusing existing category→
+      exterior/template default mappings), and an "Invite someone" section.
+      A member role sees only their own assigned building.
+- [x] `/workspace/towns/[townId]/members/[memberId]`: the production editor.
+      Refactored `EditorPanel` to take `onPatch`/`saveStatus`/`onReset` as
+      props instead of reading `useTown()` directly, so it carries no
+      local-storage opinion. `LocalEditorPanel` restores the exact previous
+      demo wiring at its one call site; `WorkspaceMemberEditor` is the new
+      Supabase-backed counterpart — same `EditorPanel`, same `RoomScene`
+      preview, each patch merged with `applyOverride` (the same merge
+      local overrides already use) and sent through the version-checked
+      `updateMember` call. A stale version shows a conflict banner with a
+      reload prompt, never a silent overwrite.
+- [x] `/workspace/towns/[townId]/preview`: reuses `PublicTownView` again —
+      now parameterized with `getMemberHref`/`homeHref`/`draftBanner`
+      instead of forked — so a draft previews through the exact renderer a
+      visitor will eventually see.
+- [x] Re-verified the local sample editor end to end after the `EditorPanel`
+      refactor, via the same CDP harness: open editor, live-type a name
+      change, full page reload confirms the override persisted, Reset to
+      demo data restores the original name. Unchanged from before the
+      refactor.
+- [x] Headless-Chrome CDP sweep of every new route signed out (all redirect
+      to `/sign-in?next=...` correctly): zero console errors, zero
+      horizontal overflow, zero sub-44px touch targets, at both 1440×900
+      and 390×844.
+
+### Invitation foundation
+
+- [x] New migration `20261020010413_add_town_invitations.sql`: a separate
+      `town_invitations` table (an invitation has no user row to attach to
+      until accepted, so it can't live in `town_memberships`), token stored
+      only as a sha256 hash, single-use (`accepted_at is null`), expiring,
+      with a CHECK mirroring `town_memberships`' existing "organizer rows
+      carry no member id" rule.
+- [x] Three SECURITY DEFINER functions (`create_town_invitation`,
+      `revoke_town_invitation`, `accept_town_invitation`), each with a fixed
+      empty `search_path` and fully qualified names. Acceptance checks the
+      signed-in caller's `auth.email()` against the invitation and raises
+      one generic "invalid, expired or already used" exception for every
+      failure case alike — a caller cannot distinguish a bad token from an
+      email mismatch from an already-used invitation.
+- [x] RLS grants a town's organizers full CRUD on its invitations and
+      nobody else anything — not even the invitation's intended recipient
+      outside the accept function itself. "No invitation access before
+      acceptance" holds structurally.
+- [x] UI: an organizer-only invite form (email, role, assigned-building
+      picker) showing the generated `/invite/[token]` link once, copyable,
+      plus a list of outstanding invitations with per-row revoke.
+      `/invite/[token]` requires sign-in and shows one explicit "Accept
+      invitation" button — no auto-accept, no content preview beforehand.
+- [x] Verified with headless-Chrome CDP that `/invite/[token]` redirects
+      signed-out visitors through `/sign-in?next=/invite/[token]` with zero
+      console errors/overflow/undersized targets at both widths.
+- [ ] **Acceptance was not exercised through a real signed-in browser
+      session** — that needs a second authenticated identity, which this
+      session could not create without sending a real email. Verified
+      instead at the SQL level: the migration's own regex/hash/role-grant
+      behavior, probed directly and read back via `pg_proc.proacl`/
+      `has_function_privilege`.
+
+### Security fix found during this pass
+
+- [x] New migration `20261020010126_revoke_anon_rpc_execute.sql`. Running
+      the Supabase security advisor after the public/workspace routes were
+      built flagged `create_town`, `is_active_town_organizer`,
+      `can_edit_member` and `is_town_creator` as callable by the `anon`
+      role — unexpected, since the core migration's own
+      `grant execute ... to authenticated` never named `anon`. Confirmed
+      live via `pg_proc.proacl`: this project carries a default-privilege
+      grant of EXECUTE on new functions to `anon`/`authenticated` that
+      attaches the moment a function is `CREATE`d, before any later
+      `revoke ... from public` in the same migration runs — "revoke from
+      public" never touches a privilege already granted directly to the
+      `anon` role by that default. None of the four were exploitable as
+      written (each keys off `auth.uid()`, which is null for an anon
+      caller — `create_town` raises, the three boolean checks just return
+      `false`), but an unauthenticated caller being able to invoke them at
+      all violated the stated "grant RPC execution only to the roles that
+      need it" rule. Applied the explicit `revoke ... from anon`, confirmed
+      via `has_function_privilege` that `anon_can_execute` is now `false`
+      on all four while `authenticated_can_execute` remains `true`, and
+      `has_active_town_membership` (intentionally anon-callable, since it
+      backs the published-or-joined read policies) is untouched. Carried
+      the lesson into the invitations migration's own three new functions,
+      which explicitly revoke from `anon` as well as `public` from the
+      start.
+
+### Checks
+
+- [x] 127 unit tests (23 new), `tsc --noEmit`, `eslint .` (zero warnings),
+      `next build`, `npm audit --omit=dev` (0 vulnerabilities),
+      `npx supabase migration list` (local and remote match across all
+      three migrations), `npx supabase config diff` (zero drift) and a
+      `--dry-run` confirming only the intended migration before every
+      `supabase db push`.
+- [x] Headless Chrome driven over raw CDP (`Page.navigate` +
+      `Emulation.setDeviceMetricsOverride` + `Runtime.evaluate` measuring
+      `scrollWidth`/`innerWidth`/`getBoundingClientRect` on every
+      interactive element, plus `Runtime.consoleAPICalled` capture) across
+      every route this pass touched or added, at 1440×900 and 390×844.
+      Found and fixed one real pre-existing bug this way: the sign-in
+      page's back link (unrelated to this session's earlier edits) shrank
+      to a 10px-wide tap target once given a narrow-width visually-hidden
+      label — added an explicit `min-width`.
+- [x] Deliberately switched away from Chrome's `--screenshot` CLI flag
+      mid-session after it cost real time chasing a false "horizontal
+      overflow" report: `--screenshot` combined with `--window-size` does
+      not reliably apply the same device-metrics emulation
+      `Emulation.setDeviceMetricsOverride` does, so its output does not
+      always reflect the real rendered viewport. The CDP-measured
+      `scrollWidth`/`innerWidth` values are the ones to trust; a
+      `--screenshot` capture showing content past the image edge is not,
+      on its own, evidence of overflow.
+
+### Limitations
+
+- **No real authenticated browser session was exercised.** Every
+  implementation and permission decision below the sign-in boundary — role
+  resolution, conflict detection, publish/unpublish, invitation
+  acceptance — is covered by unit tests against the pure logic and/or a
+  direct SQL probe against the live database, and every route's signed-out
+  behavior (redirects, not-found states, no overflow, no console errors)
+  was driven in a real browser. The interactive organizer flow itself
+  (create town → add member → edit → preview → publish → view public page
+  → unpublish) was not clicked through end to end in a browser, because
+  doing so requires completing a magic-link email round trip and this
+  session was explicitly told not to send one to an address not supplied
+  by the human tester. The exact unverified steps: items 8–21 of the
+  browser-flow checklist in this session's instructions, from "open
+  sign-in" onward.
+- A member cannot be confirmed, by browser observation, to be blocked from
+  editing another member's building — that specific check
+  (`authorizeTownAction`'s `member-mismatch` branch, and the page-level
+  gate in the member-edit route) is unit-tested and code-reviewed, not
+  interactively confirmed with two real signed-in identities.
+- The invite flow's "assigned-building picker" only offers members that
+  already exist in the town; inviting before adding any member shows an
+  explanatory message instead of a broken empty dropdown, but there is no
+  flow to invite a member and create their building in the same step.
+- No image/file upload exists yet (explicitly the next phase per
+  `PHASE2B.md`'s build sequence) — member content remains text/links only
+  in production, same as the local demo.
+- `npm audit --omit=dev` is clean; the existing full-tree advisory in the
+  prior Phase 2B foundation entry (development-only `eslint-config-next`/
+  `fast-glob` findings) was not re-checked this pass since production
+  dependencies are what's released.
+
 ## Future phases
 
-Explicitly out of scope for this milestone:
+Explicitly out of scope for Milestone 1 (the local sample-town demo this
+section originally described):
 
-- Real authentication and production permissions
+- ~~Real authentication and production permissions~~ — built in Phase 2B,
+  see above and `PHASE2B.md`.
 - Payments, subscriptions, checkout
 - Multiplayer avatars, voice chat
 - Cryptocurrency, resale
@@ -763,3 +976,7 @@ Explicitly out of scope for this milestone:
 - Runtime AI generation
 - Unrestricted 3D editing
 - A large organizer dashboard
+
+Still out of scope as of this Phase 2B pass — see `PHASE2B.md`'s build
+sequence: asset/image upload, invitation email delivery, rate limits,
+backups, audit logging and error reporting.

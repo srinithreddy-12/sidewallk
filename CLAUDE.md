@@ -1,18 +1,93 @@
 # Architecture and conventions
 
-## Phase 2B: private-alpha foundation
+## Phase 2B: private-alpha product slice
 
-`PHASE2B.md` defines the next product slice. `Town` now carries a stable slug
-and `draft`/`published` state. `lib/access.ts` is the shared optimistic
-permission model for organizer, member and visitor behavior. It is suitable for
-showing or hiding controls, but it is not the security boundary: authenticated
-server data access must repeat the check, and the policies in
-`supabase/migrations/202610170001_phase2b_core.sql` enforce it at the database.
+`PHASE2B.md` defines the product slice. `Town` now carries a stable slug and
+`draft`/`published` state. `lib/access.ts` is the shared optimistic permission
+model for organizer, member and visitor behavior. It is suitable for showing
+or hiding controls, but it is not the security boundary: authenticated server
+data access must repeat the check, and Postgres row-level security enforces it
+at the database (`supabase/migrations/202610170001_phase2b_core.sql` for
+towns/members/memberships, `20261020010126_revoke_anon_rpc_execute.sql` for a
+grant-hygiene fix, `20261020010413_add_town_invitations.sql` for invitations).
 
 Production roles are town-scoped. A member role is tied to one member building;
-organizers control town-wide actions. Invitations are not active access. Keep
-auth provider code and database clients out of scene, room and reusable UI
-components.
+organizers control town-wide actions. Invitations are not active access until
+accepted. Keep auth provider code and database clients out of scene, room and
+reusable UI components.
+
+### Data access boundary (`lib/repository/`)
+
+- `rows.ts` — raw Postgres row shapes (`TownRow`, `MemberRow`,
+  `TownMembershipRow`), kept deliberately separate from the domain model in
+  `lib/types.ts` since a row is untrusted input until converted.
+- `convert.ts` — pure `convert*` functions turning a row into a `Member`/
+  `Town`, using validators shared with `storage.ts` (see `lib/validation.ts`
+  below) so a local-storage override and a database row can never disagree on
+  what counts as valid. A structurally broken building/room/category drops
+  that member entirely rather than crashing; a merely-invalid sub-field
+  (colour, sign text) falls back to a safe default and keeps the rest. The
+  inverse `*ToJson` functions serialize a domain object back to the jsonb
+  shape the columns expect, used on every write.
+- `public.ts` — unauthenticated-safe reads for the public `/t/[townSlug]`
+  route, wrapped in React's `cache()`. Returns `null` for every "don't show
+  this" case alike (not configured, not found, not published, a DB error) —
+  the route cannot leak which one it was.
+- `workspace.ts` — server-only authenticated reads and writes
+  (list/create/update/publish/unpublish/add-member), each re-deriving the
+  viewer's membership from a freshly queried row (never a client-supplied
+  role) and gating through `authorizeTownAction` before touching anything.
+  Every mutation takes an `expectedVersion` and returns a distinct
+  `{reason: "conflict"}` result instead of silently overwriting a newer row —
+  the one explicit persistence adapter instead of scattering Supabase calls
+  through visual components.
+- `invitations.ts` — thin wrappers around the three invitation RPCs; all
+  authorization lives in the database functions and RLS, not here.
+
+`lib/validation.ts` holds the field-level validators (`isHexColor`,
+`validateLink`, `validateProp`, slug helpers) shared by `storage.ts` (local
+overrides) and `repository/convert.ts` (database rows) — extracted so the two
+untrusted-input paths can't drift.
+
+### Production routes
+
+- `/t/[townSlug]` and `/t/[townSlug]/b/[memberSlug]` — public, published-only.
+  Render through the *same* `Neighborhood`/`ListView`/`RoomScene` components
+  the sample town uses (via `PublicTownView`), not a fork. A missing, private
+  or broken town all resolve to the one `not-found.tsx` state via
+  `next/navigation`'s `notFound()`.
+- `/workspace` — authenticated; lists towns with an *active* membership only,
+  sign-out Server Action, draft-town creation.
+- `/workspace/towns/[townId]` — organizer settings/publish/members/invites, or
+  a member's own assigned building, gated by `getWorkspaceTown`'s role.
+- `/workspace/towns/[townId]/members/[memberId]` — the production editor.
+  Reuses `EditorPanel` (now a pure, props-driven component — see below)
+  through `WorkspaceMemberEditor`, which merges each patch with
+  `applyOverride` (the same merge local overrides use) and sends it through
+  `updateMember`'s version check; a stale version surfaces as a conflict
+  banner with a reload prompt, never a silent overwrite.
+- `/workspace/towns/[townId]/preview` — reuses `PublicTownView` again (now
+  parameterized with `getMemberHref`/`homeHref`/`draftBanner` instead of a
+  second implementation) so an organizer previews a draft through the exact
+  renderer a visitor will eventually see.
+- `/invite/[token]` — single explicit "Accept invitation" action; no preview
+  of the invitation's contents beforehand, since the only read path is the
+  single-use accept RPC itself.
+
+### Editor: local demo vs. production
+
+`EditorPanel` (`components/editor/EditorPanel.tsx`) no longer reads
+`useTown()` itself — it takes `onPatch`/`saveStatus`/`onReset`/`sampleMode` as
+props, so it has no opinion on where a patch goes. `LocalEditorPanel` restores
+the original local-storage wiring (the sample town's only call site,
+`b/[memberId]/page.tsx`, is unchanged). `WorkspaceMemberEditor` is the
+Supabase-backed counterpart. Same editor, same `RoomScene`, two different
+persistence adapters underneath — do not add a third, different editor.
+
+A `sampleLabels`/`sampleBadge` prop (default `true`) on `Neighborhood`,
+`NeighborhoodBuilding` and `ListView` keeps "sample member" wording scoped to
+the one local demo town — a real organizer's published content must never
+pick it up.
 
 The project is on Next.js 16, React 19 and Vitest 5. Next 16 already isolates
 development and production output, so the earlier custom `distDir` split is no
