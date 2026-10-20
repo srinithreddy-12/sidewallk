@@ -2,10 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthenticatedViewer } from "@/lib/viewer";
 import { getWorkspaceTown } from "@/lib/repository/workspace";
+import { listInvitations } from "@/lib/repository/invitations";
 import { Brand } from "@/components/ui/Brand";
 import { TownSettingsForm } from "@/components/workspace/TownSettingsForm";
 import { PublishControl } from "@/components/workspace/PublishControl";
 import { AddMemberForm } from "@/components/workspace/AddMemberForm";
+import { InviteForm } from "@/components/workspace/InviteForm";
+import { InvitationsList } from "@/components/workspace/InvitationsList";
 import styles from "./page.module.css";
 
 const FAILURE_MESSAGES: Record<string, string> = {
@@ -47,6 +50,7 @@ export default async function WorkspaceTownPage({ params }: { params: Promise<{ 
   const { town, version, role, memberId } = result.data;
   const isOrganizer = role === "organizer";
   const ownMember = memberId ? town.members.find((m) => m.id === memberId) : null;
+  const invitations = isOrganizer ? await listInvitations(townId) : null;
 
   return (
     <main id="main-content" className={styles.page}>
@@ -99,6 +103,12 @@ export default async function WorkspaceTownPage({ params }: { params: Promise<{ 
               <div style={{ marginTop: 20 }}>
                 <AddMemberForm townId={townId} />
               </div>
+            </div>
+
+            <div className={styles.section}>
+              <h2>Invite someone</h2>
+              <InviteForm townId={townId} members={town.members} />
+              {invitations !== null ? <InvitationsList townId={townId} invitations={invitations} /> : null}
             </div>
           </>
         ) : (

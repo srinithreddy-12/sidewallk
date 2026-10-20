@@ -11,6 +11,8 @@ import {
   type MemberPatch,
   type RepositoryResult,
 } from "@/lib/repository/workspace";
+import { createInvitation, revokeInvitation, type InvitationResult } from "@/lib/repository/invitations";
+import type { TownRole } from "@/lib/access";
 import type { MemberCategory } from "@/lib/types";
 
 async function requireViewer(townId: string) {
@@ -60,4 +62,20 @@ export async function unpublishTownAction(
 ): Promise<RepositoryResult<{ version: number }>> {
   const viewer = await requireViewer(townId);
   return unpublishTown(townId, viewer, expectedVersion);
+}
+
+export async function createInvitationAction(
+  townId: string,
+  input: { role: TownRole; memberId: string | null; email: string },
+): Promise<InvitationResult<{ invitationId: string; token: string; expiresAt: string }>> {
+  await requireViewer(townId);
+  return createInvitation(townId, input);
+}
+
+export async function revokeInvitationAction(
+  townId: string,
+  invitationId: string,
+): Promise<InvitationResult<{ revoked: boolean }>> {
+  await requireViewer(townId);
+  return revokeInvitation(invitationId);
 }

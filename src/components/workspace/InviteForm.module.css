@@ -1,0 +1,79 @@
+.form {
+  display: grid;
+  gap: 12px;
+  max-width: 420px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink);
+  flex: 1 1 160px;
+}
+
+.field input,
+.field select {
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 400;
+}
+
+.error {
+  font-size: 12px;
+  color: #9a3b2d;
+  margin: 0;
+}
+
+.linkBox {
+  background: var(--color-paper-dim);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.linkBox p {
+  font-size: 12px;
+  margin: 0;
+  color: var(--color-ink-soft);
+}
+
+.linkRow {
+  display: flex;
+  gap: 8px;
+}
+
+.linkRow input {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 10px;
+  font-size: 12px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+.linkRow button {
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.form button[type="submit"] {
+  min-height: 44px;
+  width: fit-content;
+}
