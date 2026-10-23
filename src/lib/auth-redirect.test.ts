@@ -8,6 +8,9 @@ describe("safeAuthNextPath", () => {
     ["dashboard", "/"],
     ["https://attacker.example", "/"],
     ["//attacker.example/path", "/"],
+    ["/\\attacker.example", "/"],
+    ["/%5cattacker.example", "/"],
+    ["/%0d%0aLocation:https://attacker.example", "/"],
     ["/", "/"],
     ["/manage/town-one?tab=members", "/manage/town-one?tab=members"],
   ])("maps %s to %s", (value, expected) => {

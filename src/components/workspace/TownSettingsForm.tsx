@@ -3,31 +3,30 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateTownNameAction } from "@/app/workspace/towns/[townId]/actions";
+import type { RunTownMutation } from "./TownManagementControls";
 import styles from "./TownSettingsForm.module.css";
 
 export function TownSettingsForm({
   townId,
   initialName,
-  initialVersion,
+  mutationPending,
+  runMutation,
 }: {
   townId: string;
   initialName: string;
-  initialVersion: number;
+  mutationPending: boolean;
+  runMutation: RunTownMutation;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
-  const [version, setVersion] = useState(initialVersion);
   const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
-  const [pending, setPending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setPending(true);
-    const result = await updateTownNameAction(townId, name, version);
-    setPending(false);
+    const result = await runMutation((version) => updateTownNameAction(townId, name, version));
+    if (!result) return;
 
     if (result.ok) {
-      setVersion(result.data.version);
       setMessage({ kind: "success", text: "Saved." });
       router.refresh();
       return;
@@ -50,8 +49,8 @@ export function TownSettingsForm({
           {message.text}
         </p>
       ) : null}
-      <button className="button" type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Save name"}
+      <button className="button" type="submit" disabled={mutationPending}>
+        {mutationPending ? "Saving…" : "Save name"}
       </button>
     </form>
   );

@@ -3,35 +3,34 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { publishTownAction, unpublishTownAction } from "@/app/workspace/towns/[townId]/actions";
+import type { RunTownMutation } from "./TownManagementControls";
 import styles from "./PublishControl.module.css";
 
 export function PublishControl({
   townId,
   initialPublished,
-  initialVersion,
   townSlug,
+  mutationPending,
+  runMutation,
 }: {
   townId: string;
   initialPublished: boolean;
-  initialVersion: number;
   townSlug: string;
+  mutationPending: boolean;
+  runMutation: RunTownMutation;
 }) {
   const router = useRouter();
   const [published, setPublished] = useState(initialPublished);
-  const [version, setVersion] = useState(initialVersion);
   const [message, setMessage] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   async function handleToggle() {
-    setPending(true);
     setMessage(null);
-    const result = published
-      ? await unpublishTownAction(townId, version)
-      : await publishTownAction(townId, version);
-    setPending(false);
+    const result = await runMutation((version) =>
+      published ? unpublishTownAction(townId, version) : publishTownAction(townId, version),
+    );
+    if (!result) return;
 
     if (result.ok) {
-      setVersion(result.data.version);
       setPublished(!published);
       router.refresh();
       return;
@@ -58,8 +57,8 @@ export function PublishControl({
           {message}
         </p>
       ) : null}
-      <button className="button button--primary" type="button" onClick={handleToggle} disabled={pending}>
-        {pending ? "Working…" : published ? "Unpublish" : "Publish town"}
+      <button className="button button--primary" type="button" onClick={handleToggle} disabled={mutationPending}>
+        {mutationPending ? "Working…" : published ? "Unpublish" : "Publish town"}
       </button>
     </div>
   );

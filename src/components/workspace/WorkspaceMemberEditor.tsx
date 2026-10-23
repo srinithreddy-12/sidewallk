@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EditorPanel, type EditorSaveStatus } from "@/components/editor/EditorPanel";
 import { RoomScene } from "@/components/interior/RoomScene";
@@ -30,45 +30,94 @@ export function WorkspaceMemberEditor({
 }) {
   const router = useRouter();
   const [member, setMember] = useState(initialMember);
-  const [version, setVersion] = useState(initialVersion);
   const [saveStatus, setSaveStatus] = useState<EditorSaveStatus | null>(null);
   const [conflict, setConflict] = useState(false);
+  const memberRef = useRef(initialMember);
+  const versionRef = useRef(initialVersion);
+  const pendingMemberRef = useRef<Member | null>(null);
+  const savingRef = useRef(false);
+  const conflictRef = useRef(false);
+  const mountedRef = useRef(true);
 
-  async function handlePatch(patch: MemberOverride) {
-    if (conflict) return;
-    const next = applyOverride(member, patch);
-    setMember(next);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    memberRef.current = initialMember;
+    versionRef.current = initialVersion;
+    pendingMemberRef.current = null;
+    conflictRef.current = false;
+    setMember(initialMember);
+    setConflict(false);
+    setSaveStatus(null);
+  }, [initialMember, initialVersion]);
+
+  const flushPendingSave = useCallback(async function flushPendingSave() {
+    if (savingRef.current || conflictRef.current) return;
+
+    const snapshot = pendingMemberRef.current;
+    if (!snapshot) return;
+
+    pendingMemberRef.current = null;
+    savingRef.current = true;
 
     const result = await updateMemberAction(
       townId,
-      next.id,
+      snapshot.id,
       {
-        name: next.name,
-        category: next.category,
-        description: next.description,
-        action: next.action,
-        room: next.room,
+        name: snapshot.name,
+        category: snapshot.category,
+        description: snapshot.description,
+        action: snapshot.action,
+        room: snapshot.room,
       },
-      version,
+      versionRef.current,
     );
+    savingRef.current = false;
+    if (!mountedRef.current) return;
 
     if (result.ok) {
-      setVersion(result.data.version);
-      setSaveStatus({ ok: true });
+      versionRef.current = result.data.version;
+      if (pendingMemberRef.current) {
+        void flushPendingSave();
+      } else {
+        setSaveStatus({ ok: true });
+      }
       return;
     }
 
     if (result.reason === "conflict") {
+      conflictRef.current = true;
+      pendingMemberRef.current = null;
       setConflict(true);
       setSaveStatus({ ok: false, reason: "This member changed elsewhere. Reload to see the latest version." });
       return;
     }
 
+    // Keep the newest optimistic snapshot available. The next deliberate edit
+    // retries the full current state rather than dropping text typed while the
+    // failed request was in flight.
+    pendingMemberRef.current = memberRef.current;
     setSaveStatus({
       ok: false,
       reason: result.reason === "invalid" ? result.message : "Could not save changes. Try again.",
     });
-  }
+  }, [townId]);
+
+  const handlePatch = useCallback((patch: MemberOverride) => {
+    if (conflictRef.current) return;
+
+    const next = applyOverride(memberRef.current, patch);
+    memberRef.current = next;
+    pendingMemberRef.current = next;
+    setMember(next);
+    setSaveStatus(null);
+    void flushPendingSave();
+  }, [flushPendingSave]);
 
   return (
     <div>

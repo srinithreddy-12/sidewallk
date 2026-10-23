@@ -98,19 +98,23 @@ before the core organizer/member publishing loop has evidence of demand.
 
 ## Current boundary
 
-The project is linked to the hosted Sidewallk Supabase project. Three
+The project is linked to the hosted Sidewallk Supabase project. Four
 migrations are applied: `202610170001_phase2b_core.sql` (towns, members,
 memberships, RLS), `20261020010126_revoke_anon_rpc_execute.sql` (a grant-
 hygiene fix — four SECURITY DEFINER functions carried an accidental default
 EXECUTE grant to `anon` that the core migration's own revoke never reached;
-see the migration file for how that was found and confirmed), and
-`20261020010413_add_town_invitations.sql` (the invitation foundation below).
+see the migration file for how that was found and confirmed),
+`20261020010413_add_town_invitations.sql` (the invitation foundation below),
+and `202610240001_fix_phase2b_review_findings.sql` (private-alpha creator
+entitlements and organizer-safe invitation acceptance).
 
 The full organizer loop is implemented and wired to Postgres: sign in, create
 a draft town, add a member, edit its profile/building/room through the
 existing editor, preview the draft, publish, view the public `/t/[slug]`
 page, unpublish, invite a collaborator by email with a copyable one-time
-link, and accept that invitation. The repository/permission logic (row
+link, and accept that invitation. Town creation is restricted to manually
+approved alpha creators and existing active organizers; a member invitation
+cannot replace an organizer membership. The repository/permission logic (row
 conversion, invalid-JSON handling, `authorizeTownAction`, Supabase-not-
 configured fallback) has 127 passing unit tests. The RLS/grant boundary was
 probed directly against the live database (role privilege checks, regex and

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthenticatedViewer } from "@/lib/viewer";
-import { listViewerTowns } from "@/lib/repository/workspace";
+import { canCreateTown, listViewerTowns } from "@/lib/repository/workspace";
 import { Brand } from "@/components/ui/Brand";
 import { CreateTownForm } from "@/components/workspace/CreateTownForm";
 import { signOutAction } from "./actions";
@@ -11,7 +11,7 @@ export default async function WorkspacePage() {
   const viewer = await getAuthenticatedViewer();
   if (!viewer) redirect("/sign-in?next=/workspace");
 
-  const towns = await listViewerTowns(viewer);
+  const [towns, townCreationAllowed] = await Promise.all([listViewerTowns(viewer), canCreateTown()]);
 
   return (
     <main id="main-content" className={styles.page}>
@@ -58,7 +58,14 @@ export default async function WorkspacePage() {
         </div>
         <div className={styles.column}>
           <h2>Start a new town</h2>
-          <CreateTownForm />
+          {townCreationAllowed ? (
+            <CreateTownForm />
+          ) : (
+            <p className={styles.empty}>
+              Town creation is enabled for approved private-alpha organizers. Accept an organizer invitation or ask
+              the Sidewallk team to enable your account.
+            </p>
+          )}
         </div>
       </section>
     </main>

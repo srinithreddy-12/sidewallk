@@ -37,7 +37,7 @@ export default async function SignInPage({
           <input id="sign-in-email" name="email" type="email" autoComplete="email" required />
           <button className="button button--primary" type="submit">Email me a sign-in link</button>
         </form> : <p className={styles.notice}>Private alpha access is not open on this preview yet. The public sample town remains available.</p>}
-        <p className={styles.note}>Access is invitation-only during the private alpha.</p>
+        <p className={styles.note}>Town access and creation are invitation-controlled during the private alpha.</p>
       </div>
     </section>
   </main>;

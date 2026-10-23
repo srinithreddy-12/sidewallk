@@ -81,6 +81,16 @@ export interface WorkspaceTownSummary {
   role: TownRole;
 }
 
+/** Database-enforced private-alpha gate for creating a new town. */
+export async function canCreateTown(): Promise<boolean | null> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.rpc("has_alpha_town_creation_access");
+  if (error) return null;
+  return data === true;
+}
+
 /** Towns where the viewer has an *active* membership. An invitation (status "invited") never appears here. */
 export async function listViewerTowns(viewer: AuthenticatedViewer): Promise<WorkspaceTownSummary[] | null> {
   const supabase = await createSupabaseServerClient();

@@ -26,7 +26,10 @@ export async function requestMagicLink(formData: FormData): Promise<never> {
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: callbackUrl.toString() },
+    // A town invitation may target someone who does not have an Auth row yet.
+    // Database memberships and the alpha town-creator entitlement remain the
+    // product access boundary after authentication.
+    options: { emailRedirectTo: callbackUrl.toString(), shouldCreateUser: true },
   });
 
   redirect(error ? `/sign-in?status=request-failed${nextParam}` : `/sign-in?status=check-email${nextParam}`);

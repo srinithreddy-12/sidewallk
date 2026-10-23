@@ -444,6 +444,24 @@ component instead (see `isPapermoth` in `RoomScene.tsx`), which was **not**
 yet collision-safe at the end of this pass — a gap Codex caught and that is
 fixed in "Fix Codex finding: Papermoth decor collision safety" below.
 
+### Independent review fixes — 24 October 2026
+
+- [x] Member autosaves serialize rapid edits and advance the optimistic
+      version between requests, so normal typing cannot conflict with an
+      earlier keystroke from the same editor.
+- [x] Town settings and publication now share one mutation/version controller;
+      overlapping mutations are disabled and each successful mutation advances
+      the version used by the next control.
+- [x] Auth callback paths reject backslashes, encoded backslashes and control
+      characters before resolving a same-origin destination.
+- [x] A member invitation cannot overwrite an existing organizer membership.
+- [x] Town creation is gated in Postgres to manually approved alpha creators
+      or users who already have an active organizer membership. Authentication
+      alone grants no town creation or workspace data access.
+- [x] Applied `202610240001_fix_phase2b_review_findings.sql`. Local and remote
+      migration versions match; direct anon probes of the entitlement table,
+      entitlement RPC and town-creation RPC each return `401 permission denied`.
+
 ### Checks
 
 - [x] Unit tests: 74 total (20 new — 5 in `neighborhood.test.ts`, 15 in
@@ -957,6 +975,10 @@ production routes and a working organizer/member loop.
 - No image/file upload exists yet (explicitly the next phase per
   `PHASE2B.md`'s build sequence) — member content remains text/links only
   in production, same as the local demo.
+- A brand-new first organizer needs an admin-granted row in
+  `alpha_town_creators`. Accepting an organizer invitation also grants future
+  town-creation access. A new invitee may receive an inert Auth row before
+  accepting; that row alone grants no town or workspace access.
 - `npm audit --omit=dev` is clean; the existing full-tree advisory in the
   prior Phase 2B foundation entry (development-only `eslint-config-next`/
   `fast-glob` findings) was not re-checked this pass since production

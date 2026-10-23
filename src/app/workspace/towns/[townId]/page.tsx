@@ -4,8 +4,7 @@ import { getAuthenticatedViewer } from "@/lib/viewer";
 import { getWorkspaceTown } from "@/lib/repository/workspace";
 import { listInvitations } from "@/lib/repository/invitations";
 import { Brand } from "@/components/ui/Brand";
-import { TownSettingsForm } from "@/components/workspace/TownSettingsForm";
-import { PublishControl } from "@/components/workspace/PublishControl";
+import { TownManagementControls } from "@/components/workspace/TownManagementControls";
 import { AddMemberForm } from "@/components/workspace/AddMemberForm";
 import { InviteForm } from "@/components/workspace/InviteForm";
 import { InvitationsList } from "@/components/workspace/InvitationsList";
@@ -68,15 +67,13 @@ export default async function WorkspaceTownPage({ params }: { params: Promise<{ 
           <>
             <div className={styles.section}>
               <h2>Town settings</h2>
-              <TownSettingsForm townId={townId} initialName={town.name} initialVersion={version} />
-              <div style={{ marginTop: 20 }}>
-                <PublishControl
-                  townId={townId}
-                  townSlug={town.slug}
-                  initialPublished={town.publicationStatus === "published"}
-                  initialVersion={version}
-                />
-              </div>
+              <TownManagementControls
+                townId={townId}
+                townName={town.name}
+                townSlug={town.slug}
+                initialPublished={town.publicationStatus === "published"}
+                initialVersion={version}
+              />
             </div>
 
             <div className={styles.section}>
