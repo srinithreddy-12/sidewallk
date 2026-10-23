@@ -11,6 +11,12 @@ interface Camera {
     zoom: number;
 }
 
+const HORIZONTAL_PAN_LIMIT = 1100;
+
+function clampHorizontalPan(value: number): number {
+    return Math.max(-HORIZONTAL_PAN_LIMIT, Math.min(HORIZONTAL_PAN_LIMIT, value));
+}
+
 function cameraForMembers(members: Member[]): Camera {
     if (members.length === 1 && members[0]) {
         const point = plotScreen(members[0].building.position);
@@ -56,18 +62,18 @@ export function Neighborhood({ members, allMembers, selectedId, onSelect, onEnte
             };
         });
     }
-    function pan(dx: number, dy: number) { updateCamera(c => ({ ...c, x: Math.max(-1100, Math.min(1100, c.x + dx)), y: Math.max(-700, Math.min(700, c.y + dy)) })); }
-    function zoom(amount: number) { updateCamera(c => { const z = Math.max(.65, Math.min(1.8, c.zoom + amount)); const center = { x: 900, y: 420 }; const ratio = z / c.zoom; return { zoom: z, x: center.x - (center.x - c.x) * ratio, y: center.y - (center.y - c.y) * ratio }; }); }
-    const mapLabel = `${sampleLabels ? "Sample neighborhood" : "Neighborhood"}. Arrow keys pan; plus and minus zoom. Tab selects buildings; Enter opens them.`;
+    function pan(dx: number) { updateCamera(c => ({ ...c, x: clampHorizontalPan(c.x + dx) })); }
+    const scrollPosition = Math.round(-clampHorizontalPan(camera.x));
+    const mapLabel = `${sampleLabels ? "Sample neighborhood" : "Neighborhood"}. Drag left or right, use the neighborhood scrollbar, or press the left and right arrow keys to explore. Tab selects buildings; Enter opens them.`;
     return <div className={styles.world}><svg ref={svgRef} className={styles.svg} viewBox={mobile ? "260 20 1080 900" : "0 0 1440 900"} tabIndex={0} role="group" aria-label={mapLabel} onKeyDown={e => { if (e.target !== e.currentTarget)
-        return; const actions: Record<string, () => void> = { ArrowLeft: () => pan(45, 0), ArrowRight: () => pan(-45, 0), ArrowUp: () => pan(0, 45), ArrowDown: () => pan(0, -45), "+": () => zoom(.15), "=": () => zoom(.15), "-": () => zoom(-.15) }; if (actions[e.key]) {
+        return; const actions: Record<string, () => void> = { ArrowLeft: () => pan(55), ArrowRight: () => pan(-55) }; if (actions[e.key]) {
         e.preventDefault();
         actions[e.key]?.();
     } }} onPointerDown={e => { if (e.button !== 0)
         return; suppressClick.current = false; drag.current = { x: e.clientX, y: e.clientY, cx: camera.x, cy: camera.y, moved: false }; }} onPointerMove={e => { const d = drag.current; if (!d)
-        return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (Math.abs(dx) + Math.abs(dy) < 7 && !d.moved)
+        return; const dx = e.clientX - d.x; if (Math.abs(dx) < 7 && !d.moved)
         return; d.moved = true; suppressClick.current = true; e.currentTarget.setPointerCapture(e.pointerId); const m = svgRef.current?.getScreenCTM(); if (!m)
-        return; updateCamera(c => ({ ...c, x: Math.max(-1100, Math.min(1100, d.cx + dx / m.a)), y: Math.max(-700, Math.min(700, d.cy + dy / m.d)) })); }} onPointerUp={e => { drag.current = null; if (e.currentTarget.hasPointerCapture(e.pointerId))
+        return; updateCamera(c => ({ ...c, x: clampHorizontalPan(d.cx + dx / m.a) })); }} onPointerUp={e => { drag.current = null; if (e.currentTarget.hasPointerCapture(e.pointerId))
         e.currentTarget.releasePointerCapture(e.pointerId); }} onPointerCancel={() => { drag.current = null; }} onClickCapture={e => { if (suppressClick.current) {
         e.stopPropagation();
         suppressClick.current = false;
@@ -75,6 +81,18 @@ export function Neighborhood({ members, allMembers, selectedId, onSelect, onEnte
  <defs><pattern id="world-dot-grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".8" fill="#bfd0bc" opacity=".48"/></pattern></defs><rect x="-2000" y="-2000" width="5000" height="5000" fill="url(#world-dot-grid)"/>
  <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.zoom})`}><g transform={`translate(${WORLD_ORIGIN.x} ${WORLD_ORIGIN.y})`}><NeighborhoodGround />{[...allMembers].sort((a, b) => plotScreen(a.building.position).y - plotScreen(b.building.position).y).map(member => { const visible = members.some(m => m.id === member.id); return <g key={member.id} opacity={visible ? 1 : .18} pointerEvents={visible ? "auto" : "none"} aria-hidden={!visible}>{visible ? <NeighborhoodBuilding member={member} variant={variants[member.id] ?? 0} selected={member.id === selectedId} onSelect={() => onSelect(member.id)} onEnter={() => onEnter(member.id)} sampleLabels={sampleLabels}/> : null}</g>; })}</g></g></svg>
  {members.length === 0 ? <p className={styles.empty}>No places match. Try another name or category.</p> : null}
- <div className={styles.controls} role="group" aria-label="Map controls"><button aria-label="Pan left" onClick={() => pan(60, 0)}>←</button><button aria-label="Pan right" onClick={() => pan(-60, 0)}>→</button><button aria-label="Pan up" onClick={() => pan(0, 60)}>↑</button><button aria-label="Pan down" onClick={() => pan(0, -60)}>↓</button><button aria-label="Zoom out" onClick={() => zoom(-.15)}>−</button><button aria-label="Zoom in" onClick={() => zoom(.15)}>+</button><button className={styles.reset} onClick={() => updateCamera({ x: 0, y: 0, zoom: 1 })}>Recenter</button></div>
- <div className={styles.legend}><span><i />{sampleLabels ? "A sample neighborhood" : "The neighborhood"}</span><span>Drag to explore · select a building to enter</span></div></div>;
+ <div className={styles.scrollbar}>
+   <label htmlFor="neighborhood-scroll">Move through the neighborhood</label>
+   <input
+     id="neighborhood-scroll"
+     type="range"
+     min={-HORIZONTAL_PAN_LIMIT}
+     max={HORIZONTAL_PAN_LIMIT}
+     step="10"
+     value={scrollPosition}
+     onChange={event => updateCamera(current => ({ ...current, x: -Number(event.target.value) }))}
+   />
+   <button type="button" onClick={() => updateCamera({ x: 0, y: 0, zoom: 1 })}>Center</button>
+ </div>
+ <div className={styles.legend}><span><i />{sampleLabels ? "A sample neighborhood" : "The neighborhood"}</span><span>Drag or use the bar to explore · select a building to enter</span></div></div>;
 }

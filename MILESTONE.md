@@ -461,6 +461,10 @@ fixed in "Fix Codex finding: Papermoth decor collision safety" below.
 - [x] Applied `202610240001_fix_phase2b_review_findings.sql`. Local and remote
       migration versions match; direct anon probes of the entitlement table,
       entitlement RPC and town-creation RPC each return `401 permission denied`.
+- [x] Replaced the map's seven-button pan/zoom cluster and vertical camera
+      movement with one horizontal neighborhood bar. Dragging the street,
+      moving the bar and using left/right arrow keys now stay synchronized;
+      phone vertical scrolling remains native.
 
 ### Checks
 
